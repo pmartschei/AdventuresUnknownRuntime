@@ -33,19 +33,20 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
 
         [LowerCaseOnly]
         [SerializeField] private string m_Type = "empty_identifier";
-        [SerializeField] private LocalizationString m_Description = new LocalizationString("core.modtypeformatter.default.description");
+        [SerializeField] private LocalizationString m_Description = new LocalizationString("core.mft.default.description");
         [SerializeField] private InternalFormat m_AdditionalFormat = new InternalFormat(
-            "core.modtypeformatters.default.flatpre", 
-            "core.modtypeformatters.default.flatmain", 
-            "core.modtypeformatters.default.flatpost");
+            "core.mft.default.flatpre",
+            "core.mft.default.flatmain",
+            "core.mft.default.flatpost");
         [SerializeField] private InternalFormat m_IncreasedFormat = new InternalFormat(
-            "core.modtypeformatters.default.increasedpre",
-            "core.modtypeformatters.default.increasedmain",
-            "core.modtypeformatters.default.increasedpost");
+            "core.mft.default.increasedpre",
+            "core.mft.default.increasedmain",
+            "core.mft.default.increasedpost");
         [SerializeField] private InternalFormat m_MoreFormat = new InternalFormat(
-            "core.modtypeformatters.default.morepre",
-            "core.modtypeformatters.default.moremain",
-            "core.modtypeformatters.default.morepost");
+            "core.mft.default.morepre",
+            "core.mft.default.moremain",
+            "core.mft.default.morepost");
+        [SerializeField] private bool m_ColorsEnabled = true;
 
 
         #region Properties
@@ -89,7 +90,14 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             sb.Append(format.Main.Equals(string.Empty) ? "" : " ");
             sb.Append("</b>");
             sb.Append(postString+(!postString.Equals(string.Empty) ? " " : ""));
-            sb.Append("<color=#" + htmlColor + ">" + Description + "</color>");
+            if (m_ColorsEnabled)
+            {
+                sb.Append("<color=#" + htmlColor + ">" + Description + "</color>");
+            }
+            else
+            {
+                sb.Append(Description);
+            }
             return sb.ToString();
         }
         public string ToText(float value, ModType modType, CalculationType calculationType)

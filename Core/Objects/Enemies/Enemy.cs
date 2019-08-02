@@ -1,6 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Objects;
 using AdventuresUnknownSDK.Core.Objects.Localization;
 using AdventuresUnknownSDK.Core.Objects.Mods;
+using AdventuresUnknownSDK.Core.Objects.Tags;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,20 +16,22 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
     {
 
         [SerializeField] private LocalizationString m_EnemyName = null;
-        [SerializeField] private EnemyTypeIdentifier[] m_EnemyType = null;
+        [SerializeField] private TagList m_TagList = null;
         [SerializeField] private Attribute[] m_Attributes = null;
+        [Range(1, 10)]
+        [SerializeField] private int m_Difficulty = 1;
         [SerializeField] private EnemyModel m_Model = null;
+        [SerializeField] private AttackPattern m_AttackPattern = null;
         
-        //behaviour for enemy
         //attack list for enemy
-
-        [HideInInspector] private List<EnemyType> m_ConsistentEnemyTypes = new List<EnemyType>();
 
         #region Properties
         public string EnemyName { get => m_EnemyName.LocalizedString; }
         public EnemyModel Model { get => m_Model; set => m_Model = value; }
         public Attribute[] Attributes { get => m_Attributes; set => m_Attributes = value; }
-        public EnemyType[] EnemyTypes { get => m_ConsistentEnemyTypes.ToArray(); }
+        public AttackPattern AttackPattern { get => m_AttackPattern; set => m_AttackPattern = value; }
+        public TagList TagList { get => m_TagList; set => m_TagList = value; }
+        public int Difficulty { get => m_Difficulty; set => m_Difficulty = value; }
 
         #endregion
 
@@ -36,16 +39,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
         public override bool ConsistencyCheck()
         {
             base.ConsistencyCheck();
-            m_ConsistentEnemyTypes.Clear();
-            for(int i = 0; i < m_EnemyType.Length; i++)
-            {
-                if (m_EnemyType[i].ConsistencyCheck())
-                {
-                    m_ConsistentEnemyTypes.Add(m_EnemyType[i].Object);
-                }
-            }
-
-            return m_ConsistentEnemyTypes.Count != 0;
+            return m_TagList.ConsistencyCheck();
         }
         public override void ForceUpdate()
         {

@@ -1,4 +1,5 @@
-﻿using AdventuresUnknownSDK.Core.Entities;
+﻿using System;
+using AdventuresUnknownSDK.Core.Entities;
 using AdventuresUnknownSDK.Core.Objects.Mods.Actions;
 using UnityEngine;
 
@@ -17,8 +18,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         [SerializeField] private ModTypeFormatter[] m_ModTypeFormatters = null;
 
         //temporary
-        [SerializeField] private CalculationAction m_CalculationAction = null;
-        [SerializeField] private TickAction m_TickAction = null;
+        [SerializeField] private ModActionCollection m_ModActionCollection = null;
 
 
         #region Properties
@@ -47,40 +47,36 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         public string HTMLColor { get; private set; }
         public float MinValue { get => m_MinValue; set => m_MinValue = value; }
         public float MaxValue { get => m_MaxValue; set => m_MaxValue = value; }
+        public ModActionCollection ModActionCollection { get => m_ModActionCollection; set => m_ModActionCollection = value; }
         #endregion
 
 
         #region Methods
-        public void Calculate(IActiveStat iActiveStat)
-        {
-            if (!m_CalculationAction) return;
-            m_CalculationAction.Calculate(iActiveStat, this);
-        }
-        public void OnTick(IActiveStat iActiveStat, float time)
-        {
-            if (!m_TickAction) return;
-            m_TickAction.OnTick(iActiveStat, time, this);
-        }
         public virtual string ToText(string formatterIdentifier, float value,CalculationType calculationType)
         {
             ModTypeFormatter modTypeFormatter = FindFirstFormatter(formatterIdentifier);
             return modTypeFormatter.ToText(value, this, calculationType, HTMLColor);
         }
+
         protected virtual ModTypeFormatter FindFirstFormatter(string identifier)
         {
-            ModTypeFormatter foundFormatter = ModTypeFormatter.DefaultFormatter;
+            ModTypeFormatter foundFormatter = null;
             if (m_ModTypeFormatters != null)
             {
                 foreach(ModTypeFormatter formatter in m_ModTypeFormatters)
                 {
                     if (formatter == null) continue;
-                    if (formatter.Identifier.Equals(identifier))
+                    if (foundFormatter==null)
+                        foundFormatter = formatter;//take the first real formatter
+                    if (formatter.Type.Equals(identifier))
                     {
                         foundFormatter = formatter;
                         break;
                     }
                 }
             }
+            if (foundFormatter == null)
+                foundFormatter = ModTypeFormatter.DefaultFormatter; //take the default formatter
             return foundFormatter;
         }
         public void OnValidate()

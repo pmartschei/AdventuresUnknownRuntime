@@ -8,6 +8,7 @@ using UnityEngine;
 using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Log;
 using static AdventuresUnknownSDK.Core.Objects.Inventories.ItemStack;
+using AdventuresUnknownSDK.Core.Utils.Identifiers;
 
 namespace AdventuresUnknownSDK.Core.Objects.Items
 {
@@ -15,12 +16,14 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
     public class Gem : Item
     {
         [SerializeField] private Attribute[] m_Attributes = null;
+        [SerializeField] private ModTypeIdentifier[] m_DisplayMods = null;
 
         private List<Attribute> m_ConsistentAttributes = new List<Attribute>();
+        private List<ModTypeIdentifier> m_ConsistentDisplayMods = new List<ModTypeIdentifier>();
+
         #region Properties
 
-
-
+        public ModTypeIdentifier[] DisplayMods { get => m_ConsistentDisplayMods.ToArray(); }
         #endregion
 
         #region Methods
@@ -28,6 +31,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         {
             if (!base.ConsistencyCheck()) return false;
             m_ConsistentAttributes.Clear();
+            m_ConsistentDisplayMods.Clear();
             foreach (Attribute attribute in m_Attributes)
             {
                 if (!attribute.ConsistencyCheck())
@@ -37,13 +41,22 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
                 }
                 m_ConsistentAttributes.Add(attribute);
             }
+            foreach (ModTypeIdentifier modTypeIdentifier in m_DisplayMods)
+            {
+                if (!modTypeIdentifier.ConsistencyCheck())
+                {
+                    GameConsole.LogWarningFormat("Skipped inconsistent DisplayMod: {0}", modTypeIdentifier.Identifier);
+                    continue;
+                }
+                m_ConsistentDisplayMods.Add(modTypeIdentifier);
+            }
             return true;
         }
         private ValueMod[] GetImplicits(ItemStack itemStack)
         {
             List<ValueMod> valueMods = new List<ValueMod>();
 
-            foreach (Attribute attribute in m_Attributes)
+            foreach (Attribute attribute in m_ConsistentAttributes)
             {
                 ValueMod valueMod = new ValueMod();
                 valueMod.Value = attribute.Value(itemStack.PowerLevel);

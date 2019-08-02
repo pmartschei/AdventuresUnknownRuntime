@@ -1,4 +1,5 @@
-﻿using AdventuresUnknownSDK.Core.Objects.Localization;
+﻿using AdventuresUnknownSDK.Core.Managers;
+using AdventuresUnknownSDK.Core.Objects.Localization;
 using AdventuresUnknownSDK.Core.Utils;
 using AdventuresUnknownSDK.Core.Utils.Events;
 using System;
@@ -9,7 +10,7 @@ using UnityEngine;
 
 namespace AdventuresUnknownSDK.Core.UI.Localization
 {
-    public class UILocalizationText : LocalizedMonoBehaviour
+    public class UILocalizationText : MonoBehaviour
     {
         [SerializeField] private LocalizationString m_LocalizationString = null;
         [SerializeField] private StringEvent m_OnLocalize = null;
@@ -18,11 +19,17 @@ namespace AdventuresUnknownSDK.Core.UI.Localization
         #endregion
 
         #region Methods
-        private void Awake()
+        private void OnEnable()
         {
+            GameSettingsManager.OnLanguageChange.AddListener(OnLanguageChange);
             OnLanguageChange();
         }
-        public override void OnLanguageChange()
+
+        private void OnDisable()
+        {
+            GameSettingsManager.OnLanguageChange.RemoveListener(OnLanguageChange);
+        }
+        public void OnLanguageChange()
         {
             m_LocalizationString.ForceUpdate();
             m_OnLocalize.Invoke(m_LocalizationString.LocalizedString);

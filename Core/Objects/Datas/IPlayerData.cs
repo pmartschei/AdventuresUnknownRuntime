@@ -8,9 +8,16 @@ using System.Runtime.Serialization;
 using System.Text;
 using UnityEngine;
 
-namespace AdventuresUnknownSDK.Core.Datas
+namespace AdventuresUnknownSDK.Core.Objects.Datas
 {
     public abstract class IPlayerData : CoreObject
     {
+        public abstract void Reset();
+        public abstract void Load();
+        public override void Initialize()
+        {
+            base.Initialize();
+            Reset();
+        }
     }
 }

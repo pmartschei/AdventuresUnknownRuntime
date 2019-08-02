@@ -3,12 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace AdventuresUnknownSDK.Core.UI.Items.Interfaces
 {
-    public interface IInventorySlot
+    public abstract class IInventorySlot : MonoBehaviour
     {
-        Inventory Inventory { get; }
-        int Slot { get; }
+        public abstract Inventory Inventory { get; }
+        public abstract int Slot { get; }
     }
 }

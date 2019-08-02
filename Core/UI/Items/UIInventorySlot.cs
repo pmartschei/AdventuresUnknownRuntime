@@ -11,7 +11,7 @@ namespace AdventuresUnknownSDK.Core.UI.Items
 {
     [AddComponentMenu("AdventuresUnknown/UI/UIInventorySlot")]
     [RequireComponent(typeof(CanvasGroup))]
-    public class UIInventorySlot : MonoBehaviour, IInventorySlot
+    public class UIInventorySlot : IInventorySlot
     {
         [SerializeField] private InventoryIdentifier m_Inventory = null;
         [SerializeField] private int m_Slot = 0;
@@ -21,11 +21,11 @@ namespace AdventuresUnknownSDK.Core.UI.Items
         private CanvasGroup m_CanvasGroup;
 
         #region Properties
-        public Inventory Inventory
+        public override Inventory Inventory
         {
             get { return m_Inventory.Object; }
         }
-        public int Slot
+        public override int Slot
         {
             get { return m_Slot; }
         }
@@ -33,24 +33,28 @@ namespace AdventuresUnknownSDK.Core.UI.Items
 
         #region Methods
 
-        private void Awake()
-        {
-            m_CanvasGroup = GetComponent<CanvasGroup>();
-        }
         private void Start()
         {
+            OnSlotUpdate(m_Slot);
+        }
+
+        private void OnEnable()
+        {
+            m_CanvasGroup = GetComponent<CanvasGroup>();
             if (!m_Inventory.ConsistencyCheck() || m_Slot < 0 || m_Slot >= m_Inventory.Object.Size)
             {
-                m_CanvasGroup.alpha = 0.5f;
-                m_CanvasGroup.interactable = false;
-                m_CanvasGroup.blocksRaycasts = false;
+                m_CanvasGroup.Hide();
             }
             else
             {
                 m_CanvasGroup.Show();
                 Inventory.OnSlotUpdateEvent.AddListener(OnSlotUpdate);
-                OnSlotUpdate(m_Slot);
             }
+        }
+
+        private void OnDisable()
+        {
+            Inventory.OnSlotUpdateEvent.RemoveListener(OnSlotUpdate);
         }
 
         private void OnSlotUpdate(int slot)

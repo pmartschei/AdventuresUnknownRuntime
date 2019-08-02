@@ -1,5 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Entities;
+using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Items;
+using AdventuresUnknownSDK.Core.Objects.Items.Actions;
 using AdventuresUnknownSDK.Core.Objects.Mods.ModBases;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using AdventuresUnknownSDK.Core.Utils.Serialization;
@@ -13,7 +15,7 @@ using UnityEngine;
 namespace AdventuresUnknownSDK.Core.Objects.Inventories
 {
     [Serializable]
-    public class ItemStack : IAdventuresUnknownSerializeCallback, IActiveStat
+    public class ItemStack : IActiveStat
     {
         [Serializable]
         public class ValueMod
@@ -40,7 +42,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         [NonSerialized] private bool m_StatsChanged = false;
         [NonSerialized] private Dictionary<string,Stat> m_HashedStats = new Dictionary<string, Stat>();
 
-        internal ItemStack(string identifier, int amount)
+        public ItemStack(string identifier) : this(identifier,1)
+        {
+
+        }
+        public ItemStack(string identifier, int amount)
         {
             if (identifier == null)
                 identifier = "";
@@ -109,22 +115,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                 return m_ItemStackName;
             }
         }
-
-        public Stat[] Stats
-        {
-            get
-            {
-                if (!Item)
-                {
-                    return new Stat[0];
-                }
-                RecalculateHashedStats();
-                Stat[] res = new Stat[m_HashedStats.Count];
-                m_HashedStats.Values.CopyTo(res, 0);
-                return res;
-            }
-        }
-        public Stat[] RawStats => Stats;
         
         public bool IsEmpty { get => m_ItemIdentifier.Identifier.Equals(""); }
         public ValueMod[] ImplicitMods { get => m_ImplicitMods; set => m_ImplicitMods = value; }
@@ -139,47 +129,15 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         #endregion
 
         #region Methods
-
-
-        public void InitializeObject()
+        public void Initialize(Entity activeStat)
         {
-        }
-
-        public bool OnBeforeSerialize()
-        {
-            return true;
-        }
-
-        public bool OnAfterDeserialize()
-        {
-            return true;
-        }
-
-        private void RecalculateHashedStats()
-        {
-            if (StatsChanged)
+            if (IsEmpty) return;
+            foreach(ValueMod valueMod in m_ImplicitMods)
             {
-                if (m_HashedStats == null)
-                    m_HashedStats = new Dictionary<string, Stat>();
-                m_HashedStats.Clear();
-                foreach (ValueMod valueMod in m_ImplicitMods)
-                {
-                    Stat stat = null;
-                    string modTypeIdentifier = valueMod.BasicModBase.ModTypeIdentifier;
-                    if (m_HashedStats.ContainsKey(modTypeIdentifier))
-                    {
-                        stat = m_HashedStats[modTypeIdentifier];
-                    }
-                    else
-                    {
-                        stat = new Stat(valueMod.BasicModBase.ModType);
-                        m_HashedStats.Add(modTypeIdentifier, stat);
-                    }
-                    stat.AddValue(valueMod.Value, valueMod.BasicModBase.CalculationType);
-                }
-                StatsChanged = false;
+                activeStat.GetStat(valueMod.BasicModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(valueMod.Value, valueMod.BasicModBase.CalculationType,this));
             }
         }
+
         private void UpdateIfChanged()
         {
             if (m_LastItemName == null || !m_LastItemName.Equals(Item.ItemName))
@@ -245,10 +203,24 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
             }
         }
 
-        public Stat GetStat(string modTypeIdentifier)
+        public CraftingAction[] GetCraftingActions()
         {
-            if (!m_HashedStats.ContainsKey(modTypeIdentifier)) return null;
-            return m_HashedStats[modTypeIdentifier] as Stat;
+            if (IsEmpty) return null;
+            return CraftingActionManager.GetDefaultCraftingActions(Item.ItemType.Identifier);
+        }
+
+        public ItemStack Copy()
+        {
+            ItemStack copyStack = new ItemStack(this.ItemIdentifier,this.Amount);
+
+            copyStack.PowerLevel = this.PowerLevel;
+
+            copyStack.ImplicitMods = this.ImplicitMods;
+            copyStack.ExplicitMods = this.ExplicitMods;
+
+            copyStack.StatsChanged = true;
+
+            return copyStack;
         }
         #endregion
     }

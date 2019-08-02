@@ -16,15 +16,12 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
     {
         [Range(0, 100)]
         [SerializeField] private int m_Size = 10;
-        [SerializeField] private GameEventIdentifier m_GameEvent = null;
         [SerializeField] private List<ItemStack> m_ItemStacks = new List<ItemStack>();
 
         [NonSerialized]
         private IntEvent m_OnSlotUpdate = new IntEvent();
         [NonSerialized]
         private bool m_StatsChanged = false;
-        [NonSerialized]
-        private Dictionary<string,Stat> m_HashedStats = new Dictionary<string, Stat>();
 
         #region Properties
         public int Size
@@ -52,18 +49,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         {
             get { return m_OnSlotUpdate; }
         }
-        public Stat[] Stats
-        {
-            get
-            {
-                RecalculateHashedStats();
-                Stat[] res = new Stat[m_HashedStats.Count];
-                m_HashedStats.Values.CopyTo(res, 0);
-                return res;
-            }
-        }
-
-        public Stat[] RawStats => Stats;
 
         public bool StatsChanged
         {
@@ -85,44 +70,17 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                 }
             }
         }
-
-        private void RecalculateHashedStats()
-        {
-            if (StatsChanged)
-            {
-                m_HashedStats.Clear();
-                foreach(ItemStack itemStack in m_ItemStacks)
-                {
-                    Stat[] stats = itemStack.Stats;
-                    foreach (Stat stat in stats)
-                    {
-                        if (m_HashedStats.ContainsKey(stat.ModTypeIdentifier))
-                        {
-                            Stat hashedStat = m_HashedStats[stat.ModTypeIdentifier];
-                            hashedStat += stat;
-                        }
-                        else
-                        {
-                            m_HashedStats.Add(stat.ModTypeIdentifier, stat);
-                        }
-                    }
-                }
-                StatsChanged = false;
-            }
-        }
         #endregion
 
         #region Methods
 
-        public Stat GetStat(string modTypeIdentifier)
+        public void Initialize(Entity activeStat)
         {
-            if (!m_HashedStats.ContainsKey(modTypeIdentifier)) return null;
-            return m_HashedStats[modTypeIdentifier] as Stat;
-        }
-        public override bool ConsistencyCheck()
-        {
-            m_GameEvent.ConsistencyCheck();
-            return true;
+            foreach (ItemStack itemStack in m_ItemStacks)
+            {
+                if (itemStack.IsEmpty) continue;
+                itemStack.Initialize(activeStat);
+            }
         }
         public override void Initialize()
         {
@@ -143,7 +101,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
             if (itemStack == null) return true;
             if (itemStack.Amount <= 0) return true;
             int slotToInsert = -1;
-            if (!itemStack.Item && itemStack.Item.IsStackable)
+            if (itemStack.Item != null && itemStack.Item.IsStackable)
             {
                 slotToInsert = FindItemSlotIndexByIdentifier(itemStack.Item.Identifier);
             }
@@ -153,13 +111,16 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
 
             ItemStack slotItemStack = m_ItemStacks[slotToInsert];
 
+            StatsChanged = true;
+
             if (slotItemStack.Item == null)
             {
-                slotItemStack.ItemIdentifier = itemStack.ItemIdentifier;
-                slotItemStack.Amount = itemStack.Amount;
-                slotItemStack.PowerLevel = itemStack.PowerLevel;
-                slotItemStack.ImplicitMods = itemStack.ImplicitMods;
-                slotItemStack.ExplicitMods = itemStack.ExplicitMods;
+                m_ItemStacks[slotToInsert] = itemStack;
+                //slotItemStack.ItemIdentifier = itemStack.ItemIdentifier;
+                //slotItemStack.Amount = itemStack.Amount;
+                //slotItemStack.PowerLevel = itemStack.PowerLevel;
+                //slotItemStack.ImplicitMods = itemStack.ImplicitMods;
+                //slotItemStack.ExplicitMods = itemStack.ExplicitMods;
                 UpdateSlot(slotToInsert);
                 return true;
             }
@@ -170,16 +131,32 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                 UpdateSlot(slotToInsert);
             }
             FindNextEmptySlot();
-            StatsChanged = true;
             return AddItemStack(itemStack);
+        }
+
+        public void SetItemStack(ItemStack itemStack, int index)
+        {
+            if (index < 0 || index >= m_ItemStacks.Count) return;
+            m_ItemStacks[index] = itemStack;
+            if (itemStack.IsEmpty && index < NextEmptySlot)
+            {
+                NextEmptySlot = index;
+            }
+            else if (index == NextEmptySlot)
+            {
+                FindNextEmptySlot();
+            }
+            UpdateSlot(index);
         }
 
         public void RemoveItemStack(int index)
         {
             if (index < 0 || index >= m_ItemStacks.Count) return;
             m_ItemStacks[index].ItemIdentifier = "";
-            m_ItemStacks[index].Amount = 0;
+            //m_ItemStacks[index].Amount = 0;
             m_ItemStacks[index].PowerLevel = 0;
+            m_ItemStacks[index].ImplicitMods = new ItemStack.ValueMod[0];
+            m_ItemStacks[index].ExplicitMods = new ItemStack.ValueMod[0];
             UpdateSlot(index);
             if (index < NextEmptySlot) NextEmptySlot = index;
             StatsChanged = true;
@@ -245,10 +222,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         private void UpdateSlot(int slotToInsert)
         {
             m_OnSlotUpdate.Invoke(slotToInsert);
-            if (m_GameEvent.Object)
-            {
-                m_GameEvent.Object.Raise();
-            }
         }
 
         private int FindItemSlotIndexByIdentifier(string identifier)
@@ -299,6 +272,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                     UpdateSlot(i);
                 }
             }
+            StatsChanged = true;
         }
 
         #endregion

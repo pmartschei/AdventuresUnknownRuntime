@@ -1,10 +1,12 @@
 ﻿using AdventuresUnknownSDK.Core.Objects.Mods.ModBases;
+using AdventuresUnknownSDK.Core.Objects.Tags;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using static AdventuresUnknownSDK.Core.Objects.Inventories.ItemStack;
 
 namespace AdventuresUnknownSDK.Core.Objects.Mods
 {
@@ -12,6 +14,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
     public class Mod : CoreObject
     {
         [SerializeField] private BasicModBaseIdentifier m_ModBaseIdentifier = null;
+        [SerializeField] private int m_Domain = 0;
         [Range(1,25)]
         [SerializeField] private int m_Tier = 1;
         [Range(0,100)]
@@ -19,6 +22,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         [SerializeField] private float m_MinValue = 1;
         [SerializeField] private float m_MaxValue = 1;
         [SerializeField] private float m_Round = 1;
+        [SerializeField] private WeightedTagList m_WeightedTagList = new WeightedTagList();
 
         #region Properties
         public int Tier
@@ -37,6 +41,9 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             }
         }
 
+        public WeightedTagList WeightedTagList { get => m_WeightedTagList; set => m_WeightedTagList = value; }
+        public int Domain { get => m_Domain; set => m_Domain = value; }
+
         #endregion
 
         #region Methods
@@ -46,15 +53,16 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         }
         public override bool IsIdentifierEditableInEditor()
         {
-            return false;
+            return true;
         }
         protected override string IdentifierCalculation()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append(m_ModBaseIdentifier.Identifier);
-            sb.Append(".t");
-            sb.Append(Tier);
-            return sb.ToString().ToLowerInvariant();
+            return base.IdentifierCalculation();
+            //StringBuilder sb = new StringBuilder();
+            //sb.Append(m_ModBaseIdentifier.Identifier);
+            //sb.Append(".t");
+            //sb.Append(Tier);
+            //return sb.ToString().ToLowerInvariant();
         }
         public virtual void OnValidate()
         {
@@ -64,6 +72,30 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         public virtual string ToText(string formatterIdentifier, float value)
         {
             return m_ModBaseIdentifier.Object.ToText(formatterIdentifier, value);
+        }
+
+        public virtual int GetSumOfTags(params string[] tags)
+        {
+            int weight = 0;
+
+            foreach(string tag in tags)
+            {
+                weight += m_WeightedTagList.GetWeight(tag);
+            }
+
+            return weight;
+        }
+
+        public virtual ValueMod Roll()
+        {
+            ValueMod valueMod = new ValueMod();
+            valueMod.Identifier = ModBase.Identifier;
+            valueMod.Value = MinValue + UnityEngine.Random.Range(0.0f, MaxValue - MinValue);
+            if (m_Round != 0.0f)
+            {
+                valueMod.Value = (long)(valueMod.Value / m_Round) * m_Round;
+            }
+            return valueMod;
         }
         #endregion
     }

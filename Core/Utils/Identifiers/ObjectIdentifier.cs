@@ -50,6 +50,7 @@ namespace AdventuresUnknownSDK.Core.Utils.Identifiers
         }
         private void UpdateIfChanged()
         {
+            if (!Application.isPlaying) return;
             if (m_IdentifierDataChanged)
             {
                 m_IdentifierDataChanged = false;

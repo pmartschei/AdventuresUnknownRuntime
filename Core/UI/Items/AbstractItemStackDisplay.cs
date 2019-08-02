@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace AdventuresUnknownSDK.Core.UI.Items
 {
-    public abstract class AbstractItemStackDisplay : LocalizedMonoBehaviour
+    public abstract class AbstractItemStackDisplay : MonoBehaviour
     {
 
 

@@ -21,12 +21,35 @@ namespace AdventuresUnknownSDK.Core.Managers
         {
             get => Instance.MissingItemDisplayImpl;
         }
+        public static Transform HealthBarsTransform
+        {
+            get => Instance.HealthBarsTransformImpl;
+            set => Instance.HealthBarsTransformImpl = value;
+        }
+        public static Transform ItemDropsTransform
+        {
+            get => Instance.ItemDropsTransformImpl;
+            set => Instance.ItemDropsTransformImpl = value;
+        }
+        public static Transform EntityTransform
+        {
+            get => Instance.EntityTransformImpl;
+            set => Instance.EntityTransformImpl = value;
+        }
+        public static Transform AttacksTransform
+        {
+            get => Instance.AttacksTransformImpl;
+            set => Instance.AttacksTransformImpl = value;
+        }
         public abstract Transform OverlayImpl { get; }
         public abstract AbstractItemStackDisplay MissingItemDisplayImpl { get; }
+        public abstract Transform HealthBarsTransformImpl { get; set; }
+        public abstract Transform ItemDropsTransformImpl { get; set; }
+        public abstract Transform EntityTransformImpl { get; set; }
+        public abstract Transform AttacksTransformImpl { get; set; }
         #endregion
 
         #region Methods
-
         #endregion
     }
 }

@@ -12,10 +12,10 @@ namespace AdventuresUnknownSDK.Core.UI.Items
     public class UIDragDropItemStack : MonoBehaviour, IDragItemStack, IDropHandler
     {
         [SerializeField] private CanvasGroup m_DragObject = null;
-        [SerializeField] private GameObject m_Canvas = null;
         [SerializeField] private UIInventorySlot m_UIInventorySlot = null;
 
         private Transform m_LastParent = null;
+        private Canvas m_Root = null;
 
         #region Properties
 
@@ -29,7 +29,7 @@ namespace AdventuresUnknownSDK.Core.UI.Items
         #region Methods
         private void Awake()
         {
-            if (!m_DragObject || !m_Canvas || !m_UIInventorySlot)
+            if (!m_DragObject || !m_UIInventorySlot)
                 Debug.LogError("UIDragItemStack an input is null", this);
         }
         public virtual void OnPointerDown(PointerEventData eventData)
@@ -40,13 +40,24 @@ namespace AdventuresUnknownSDK.Core.UI.Items
         public virtual void OnBeginDrag(PointerEventData eventData)
         {
             m_DragObject.blocksRaycasts = false;
+            m_Root = m_DragObject.transform.root.GetComponent<Canvas>();
             m_LastParent = m_DragObject.transform.parent;
-            m_DragObject.transform.SetParent(m_Canvas.transform, true);
+            m_DragObject.transform.SetParent(m_Root.transform, true);
         }
 
         public virtual void OnDrag(PointerEventData eventData)
         {
-            m_DragObject.transform.position = eventData.position;
+            if (m_Root.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                m_DragObject.transform.position = eventData.position;
+            }
+            else// if (m_Root.renderMode == RenderMode.ScreenSpaceCamera)
+            {
+                Vector3 oldZ = m_DragObject.transform.position;
+                Vector3 newVector = m_Root.worldCamera.ScreenToWorldPoint(eventData.position);
+                newVector.z = oldZ.z;
+                m_DragObject.transform.position = newVector;
+            }
         }
 
         public virtual void OnEndDrag(PointerEventData eventData)

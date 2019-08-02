@@ -17,7 +17,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         [SerializeField] private BasicModBaseIdentifier m_ModBaseIdentifier = null;
         [SerializeField] private float m_Value = 0;
         [SerializeField] private bool m_IsCurve = false;
-        [SerializeField] private AnimationCurve m_ValueCurve;
+        [SerializeField] private AnimationCurve m_ValueCurve = null;
 
         #region Properties
         public string ModBaseIdentifier { get => m_ModBaseIdentifier.Identifier; }

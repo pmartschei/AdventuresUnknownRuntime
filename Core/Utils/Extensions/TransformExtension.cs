@@ -12,11 +12,33 @@ namespace AdventuresUnknownSDK.Core.Utils.Extensions
 
         public static Transform Clear(this Transform transform)
         {
-            foreach(Transform child in transform)
+            var tempList = transform.Cast<Transform>().ToList();
+            foreach (Transform child in tempList)
             {
-                GameObject.Destroy(child.gameObject);
+                if (!Application.isPlaying)
+                {
+                    GameObject.DestroyImmediate(child.gameObject);
+                }
+                else
+                {
+                    GameObject.Destroy(child.gameObject);
+                }
             }
             return transform;
+        }
+        public static Transform MoveToLayer(this Transform root,int layer)
+        {
+            Stack<Transform> moveTargets = new Stack<Transform>();
+            moveTargets.Push(root);
+            Transform currentTarget;
+            while (moveTargets.Count != 0)
+            {
+                currentTarget = moveTargets.Pop();
+                currentTarget.gameObject.layer = layer;
+                foreach (Transform child in currentTarget)
+                    moveTargets.Push(child);
+            }
+            return root;
         }
     }
 }

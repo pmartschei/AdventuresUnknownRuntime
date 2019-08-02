@@ -9,9 +9,9 @@ using UnityEngine;
 
 namespace AdventuresUnknownSDK.Core.Objects
 {
-    public abstract class CoreObject : ScriptableObject, ILocalize, IAdventuresUnknownSerializeCallback
+    public abstract class CoreObject : ScriptableObject, IAdventuresUnknownSerializeCallback
     {
-        [SerializeField] private string m_Identifier = "empty_identifier";
+        [SerializeField] private string m_Identifier = "";
         [SerializeField] private bool m_Overrides = false;
         
 
@@ -63,7 +63,7 @@ namespace AdventuresUnknownSDK.Core.Objects
         }
         public virtual void Initialize()
         {
-
+            GameSettingsManager.OnLanguageChange.AddListener(OnLanguageChange);
         }
 
         public virtual void OnLanguageChange()

@@ -15,11 +15,11 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
         [Tooltip("Drop Identifier can be DropTable Identifier or Item Identifier")]
         [SerializeField] private CoreObjectIdentifier m_DropIdentifier = new CoreObjectIdentifier(typeof(DropTable),typeof(Item));
         [Range(0,100000)]
-        [SerializeField] private int m_RelativeDropChance = 100;
-        [Tooltip("Min Amount has only an effect if the item is stackable")]
+        [SerializeField] private int m_Weight = 100;
+        [Tooltip("Min Amount has only an effect if no DropTable and the item is stackable")]
         [Range(1,50)]
         [SerializeField] private int m_MinAmount = 1;
-        [Tooltip("Max Amount has only an effect if the item is stackable")]
+        [Tooltip("Max Amount has only an effect if no DropTable and the item is stackable")]
         [Range(1, 50)]
         [SerializeField] private int m_MaxAmount = 1;
 
@@ -29,7 +29,7 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
         public string DropIdentifier => m_DropIdentifier.Identifier;
         public int MaxAmount { get => m_MaxAmount; set => m_MaxAmount = value; }
         public int MinAmount { get => m_MinAmount; set => m_MinAmount = value; }
-        public int RelativeDropChance { get => m_RelativeDropChance; set => m_RelativeDropChance = value; }
+        public int Weight { get => m_Weight; set => m_Weight = value; }
         #endregion
 
         #region Methods
@@ -40,7 +40,7 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
             {
                 DropChance dc = new DropChance();
                 m_DropIdentifier = dc.m_DropIdentifier;
-                m_RelativeDropChance = dc.m_RelativeDropChance;
+                m_Weight = dc.m_Weight;
                 m_MinAmount = dc.m_MinAmount;
                 m_MaxAmount = dc.m_MaxAmount;
                 m_IsNew = true;

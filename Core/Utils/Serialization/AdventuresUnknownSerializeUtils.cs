@@ -261,7 +261,15 @@ namespace AdventuresUnknownSDK.Core.Utils.Serialization
             string combined = Assembly.CreateQualifiedName(assemblyString, typeString);
             Type type = Type.GetType(combined);
             if (type == null) return null;
-            object objInstance = FormatterServices.GetUninitializedObject(type);
+            object objInstance = null;
+            if (type.IsSubclassOf(typeof(ScriptableObject)))
+            {
+                objInstance = ScriptableObject.CreateInstance(type);
+            }
+            if (objInstance == null)
+            {
+                objInstance = FormatterServices.GetSafeUninitializedObject(type);
+            }
             if (objInstance == null) return null;
             IAdventuresUnknownSerializeCallback auSerializeCB = objInstance as IAdventuresUnknownSerializeCallback;
             if (auSerializeCB != null) auSerializeCB.InitializeObject();

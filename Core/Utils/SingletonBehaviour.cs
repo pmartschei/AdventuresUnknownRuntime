@@ -25,10 +25,6 @@ namespace AdventuresUnknownSDK.Core.Utils
             if (!m_T)
             {
                 m_T = FindObjectOfType<T>();
-                if (!m_T)
-                {
-                    GameConsole.LogError("Could not find a Singleton Object for Type " + typeof(T));
-                }
             }
             return m_T;
         }

@@ -1,5 +1,6 @@
-﻿using AdventuresUnknownSDK.Core.Datas;
-using AdventuresUnknownSDK.Core.Managers;
+﻿using AdventuresUnknownSDK.Core.Managers;
+using AdventuresUnknownSDK.Core.Objects.GameModes;
+using AdventuresUnknownSDK.Core.Utils.Events;
 using System;
 using System.Runtime.Serialization;
 using UnityEngine;
@@ -14,18 +15,22 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
         [SerializeField] private int m_Level = 0;
         [SerializeField] private int m_Experience = 0;
         [SerializeField] private float m_PlayTime = 0;
+        [SerializeField] private string m_GameMode = "";
 
         [NonSerialized]
-        private UnityEvent m_OnLevelChange = new UnityEvent();
+        private string m_SaveFileName = "";
+
         [NonSerialized]
-        private UnityEvent m_OnExperienceChange = new UnityEvent();
+        private IntEvent m_OnLevelChange = new IntEvent();
         [NonSerialized]
-        private UnityEvent m_OnPlayTimeChange = new UnityEvent();
+        private IntEvent m_OnExperienceChange = new IntEvent();
+        [NonSerialized]
+        private FloatEvent m_OnPlayTimeChange = new FloatEvent();
 
 
         #region Properties
 
-        public string ShipName { get => m_ShipName; private set => m_ShipName = value; }
+        public string ShipName { get => m_ShipName; set => m_ShipName = value; }
         public int Level
         {
             get => m_Level;
@@ -34,7 +39,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
                 if (m_Level != value)
                 {
                     m_Level = value;
-                    m_OnLevelChange.Invoke();
+                    m_OnLevelChange.Invoke(m_Level);
                 }
             }
         }
@@ -45,7 +50,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
                 if (m_Experience != value)
                 {
                     m_Experience = value;
-                    m_OnExperienceChange.Invoke();
+                    m_OnExperienceChange.Invoke(m_Experience);
                 }
             }
         }
@@ -56,25 +61,38 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
                 if (m_PlayTime != value)
                 {
                     m_PlayTime = value;
-                    m_OnPlayTimeChange.Invoke();
+                    m_OnPlayTimeChange.Invoke(m_PlayTime);
                 }
             }
         }
-        public UnityEvent OnLevelChange { get => m_OnLevelChange; }
-        public UnityEvent OnExperienceChange { get => m_OnExperienceChange;}
-        public UnityEvent OnPlayTimeChange { get => m_OnPlayTimeChange; }
+        public IntEvent OnLevelChange { get => m_OnLevelChange; }
+        public IntEvent OnExperienceChange { get => m_OnExperienceChange;}
+        public FloatEvent OnPlayTimeChange { get => m_OnPlayTimeChange; }
+        public string GameMode { get => m_GameMode; set => m_GameMode = value; }
+        public string SaveFileName { get => m_SaveFileName; set => m_SaveFileName = value; }
+
         #endregion
 
         #region Methods
-        public override bool OnAfterDeserialize()
+        public override void Reset()
+        {
+            m_Level = 1;
+            m_Experience = 0;
+            m_GameMode = "";
+            m_ShipName = "";
+            m_SaveFileName = "";
+            m_PlayTime = 0;
+        }
+        public override void Load()
         {
             ContextData contextData = FindScriptableObject<ContextData>();
-            if (!contextData) return false;
+            if (!contextData) return;
             contextData.ShipName = this.ShipName;
             contextData.Level = this.Level;
             contextData.Experience = this.Experience;
             contextData.PlayTime = this.PlayTime;
-            return true;
+            contextData.GameMode = this.GameMode;
+            contextData.SaveFileName = this.SaveFileName;
         }
         #endregion
     }

@@ -11,5 +11,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         Flat = 0,
         Increased = 1,
         More = 2,
+        FlatExtra = 3,
     }
 }

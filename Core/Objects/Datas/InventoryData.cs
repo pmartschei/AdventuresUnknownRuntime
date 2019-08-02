@@ -1,5 +1,4 @@
-﻿using AdventuresUnknownSDK.Core.Datas;
-using AdventuresUnknownSDK.Core.Managers;
+﻿using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using AdventuresUnknownSDK.Core.Utils.Serialization;
@@ -23,25 +22,9 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
         #endregion
 
         #region Methods
-        public override bool OnAfterDeserialize()
-        {
-            InventoryData inventoryData = FindScriptableObject<InventoryData>();
-            if (!inventoryData) return false;
-            inventoryData.m_InventoryIdentifier = this.m_InventoryIdentifier;
-            if (!inventoryData.m_InventoryIdentifier.ConsistencyCheck()) return false;
-            Inventory inventory = inventoryData.m_InventoryIdentifier.Object;
-            inventory.Size = m_Size;
-            inventory.Clear();
-            if (m_ItemStacks == null) return true;
-            foreach(ItemStack itemStack in m_ItemStacks)
-            {
-                inventory.AddItemStack(itemStack);
-            }
-            return true;
-        }
         public override bool OnBeforeSerialize()
         {
-            if (!m_InventoryIdentifier.ConsistencyCheck()) return false;
+            if (!ConsistencyCheck()) return false;
             m_Size = m_InventoryIdentifier.Object.Size;
             m_ItemStacks = m_InventoryIdentifier.Object.Items;
             return true;
@@ -49,6 +32,32 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
         public override bool ConsistencyCheck()
         {
             return m_InventoryIdentifier.ConsistencyCheck();
+        }
+
+        public override void Reset()
+        {
+            m_InventoryIdentifier.Object.Clear();
+            m_Size = 0;
+            m_ItemStacks = null;
+        }
+
+        public override void Load()
+        {
+            InventoryData inventoryData = FindScriptableObject<InventoryData>();
+            if (!inventoryData) return;
+            inventoryData.m_InventoryIdentifier = this.m_InventoryIdentifier;
+            if (!inventoryData.m_InventoryIdentifier.ConsistencyCheck()) return;
+            Inventory inventory = inventoryData.m_InventoryIdentifier.Object;
+            inventory.Size = m_Size;
+            inventory.Clear();
+            if (m_ItemStacks == null) return;
+            int i = 0;
+            foreach (ItemStack itemStack in m_ItemStacks)
+            {
+                itemStack.ForceUpdate();
+                inventory.SetItemStack(itemStack, i);
+                i++;
+            }
         }
         #endregion
     }
