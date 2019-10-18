@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AdventuresUnknownSDK.Core.Entities.Controllers;
+using AdventuresUnknownSDK.Core.Entities.Controllers.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,24 +19,40 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
         [SerializeField]
         private EntityState m_InitialStateSO = null;
 
-        private EntityState m_MainState = null;
         private EntityState m_CurrentState = null;
         private EntityState m_NextState = null;
-        private bool m_Destroying = false;
+        
+        public class CommonComponents
+        {
+            public EntityController EntityController { get; internal set; }
+            public EnemyController EnemyController { get; internal set; }
+            public IAttackController AttackController { get; internal set; }
+            public IRotationalController RotationalController { get; internal set; }
+            public ITranslationalController TranslationalController { get; internal set; }
+            public IMuzzleComponentController MuzzleComponentController { get; internal set; }
+        }
 
         #region Properties
-
+        public CommonComponents GameObjectComponents { get; private set; }
         #endregion
 
         #region Methods
         public void SetNextState(EntityState nextState)
         {
-            m_NextState = nextState;
+            if (nextState)
+            {
+                m_NextState = Instantiate(nextState);
+            }
         }
 
         public void SetNextStateToMain()
         {
-            this.m_NextState = Instantiate(m_MainState);
+            if (m_MainStateSO)
+                this.m_NextState = Instantiate(m_MainStateSO);
+            else
+            {
+                this.m_NextState = ScriptableObject.CreateInstance(typeof(Uninitalized)) as Uninitalized;
+            }
         }
 
         public bool HasPendingState()
@@ -49,7 +67,7 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
             newState.EntityStateMachine = this;
             if (m_CurrentState == null)
             {
-                Debug.LogErrorFormat("State machine {0} on object {1} does not have a state!", m_CustomName, gameObject);
+                Debug.LogErrorFormat("State machine {0} on object {1} does not have a state", m_CustomName, gameObject);
             }
 
             m_CurrentState.OnExit();
@@ -58,9 +76,16 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
         }
         private void Awake()
         {
-            m_MainState = Instantiate(m_MainStateSO);
-            m_CurrentState = new Uninitalized();
+            m_CurrentState = ScriptableObject.CreateInstance(typeof(Uninitalized)) as Uninitalized;
             m_CurrentState.EntityStateMachine = this;
+            CommonComponents commonComponents = new CommonComponents();
+            commonComponents.EntityController = gameObject.GetComponent<EntityController>();
+            commonComponents.EnemyController = commonComponents.EntityController as EnemyController;
+            commonComponents.AttackController = commonComponents.EntityController as IAttackController;
+            commonComponents.RotationalController = commonComponents.EntityController as IRotationalController;
+            commonComponents.TranslationalController = commonComponents.EntityController as ITranslationalController;
+            commonComponents.MuzzleComponentController = commonComponents.EntityController as IMuzzleComponentController;
+            GameObjectComponents = commonComponents;
         }
         private void Start()
         {
@@ -73,7 +98,12 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
         }
         private void Update()
         {
-            m_CurrentState.Update();
+            if (m_NextState != null)
+            {
+                SetState(m_NextState);
+            }
+            if (m_CurrentState && !GameObjectComponents.EntityController.Entity.IsDead)
+                m_CurrentState.Update();
         }
         private void FixedUpdate()
         {
@@ -81,11 +111,11 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
             {
                 SetState(m_NextState);
             }
-            m_CurrentState.FixedUpdate();
+            if (m_CurrentState && !GameObjectComponents.EntityController.Entity.IsDead)
+                m_CurrentState.FixedUpdate();
         }
         private void OnDestroy()
         {
-            m_Destroying = true;
             if (m_CurrentState != null)
             {
                 m_CurrentState.OnExit();
@@ -94,11 +124,13 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
         }
         private void OnDrawGizmos()
         {
-            m_CurrentState.OnDrawGizmos();
+            if (m_CurrentState)
+                m_CurrentState.OnDrawGizmos();
         }
         private void OnDrawGizmosSelected()
         {
-            m_CurrentState.OnDrawGizmosSelected();
+            if (m_CurrentState)
+                m_CurrentState.OnDrawGizmosSelected();
         }
         #endregion
     }

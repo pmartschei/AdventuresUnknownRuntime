@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using AdventuresUnknownSDK.Core.Log;
 using AdventuresUnknownSDK.Core.Objects.Inventories;
+using Random = UnityEngine.Random;
 
 namespace AdventuresUnknownSDK.Core.Objects.DropTables
 {
@@ -18,6 +19,10 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
         [SerializeField] private List<DropChance> m_DropChances = new List<DropChance>();
 
         private List<DropChance> m_ConsistentDropChances = new List<DropChance>();
+
+
+        private bool m_FirstDeserialization = true;
+        private int m_ListLength = 0;
 
         #region Properties
         public bool DistinctRolls { get => m_DistinctRolls; set => m_DistinctRolls = value; }
@@ -95,13 +100,32 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
                         return dropTable.Roll(maxLevel,ignoreItems);
                     }else if (item)
                     {
-                        return item.CreateItem(UnityEngine.Random.Range(dropChances[j].MinAmount, dropChances[j].MaxAmount));
+                        ItemStack itemStack = item.CreateItem(UnityEngine.Random.Range(dropChances[j].MinAmount, dropChances[j].MaxAmount));
+                        itemStack.ItemLevel = Random.Range(Mathf.RoundToInt(maxLevel * 0.9f), maxLevel);
+                        return itemStack;
                     }
                     
                     break;
                 }
+                roll -= dropChances[j].Weight;
             }
             return null;
+        }
+        private void OnValidate()
+        {
+            if (m_FirstDeserialization)
+            {
+                m_ListLength = m_DropChances.Count;
+                m_FirstDeserialization = false;
+            }
+            else
+            {
+                for (int i = m_ListLength; i < m_DropChances.Count; i++)
+                {
+                    m_DropChances[i].UpdateIfNew();
+                }
+                m_ListLength = m_DropChances.Count;
+            }
         }
         #endregion
     }

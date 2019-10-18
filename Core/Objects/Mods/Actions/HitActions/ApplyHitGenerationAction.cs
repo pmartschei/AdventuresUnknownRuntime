@@ -15,7 +15,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.HitActions
     {
         [SerializeField] private ModTypeIdentifier m_Source = null;
         [SerializeField] private ModTypeIdentifier m_Target = null;
-        [SerializeField] private HitType m_Type = HitType.DefensiveEntity;
         
         #region Methods
 
@@ -23,11 +22,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.HitActions
         {
             HitContext hitContext = actionContext as HitContext;
             if (hitContext == null) return;
-            Entity entity = hitContext.DefensiveEntity;
-            if (m_Type == HitType.OffensiveEntity)
-            {
-                entity = hitContext.OffensiveEntity;
-            }
+            Entity entity = GetTypeEntity(hitContext);
             Stat target = entity.GetStat(m_Target.Identifier);
             Stat source = activeStats.GetStat(m_Source.Identifier);
             target.AddStatModifier(new StatModifier(source.Flat, CalculationType.Flat, this));

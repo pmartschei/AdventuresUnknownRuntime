@@ -17,13 +17,13 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
         [Range(0,100000)]
         [SerializeField] private int m_Weight = 100;
         [Tooltip("Min Amount has only an effect if no DropTable and the item is stackable")]
-        [Range(1,50)]
+        [Range(1, 1000)]
         [SerializeField] private int m_MinAmount = 1;
         [Tooltip("Max Amount has only an effect if no DropTable and the item is stackable")]
-        [Range(1, 50)]
+        [Range(1, 1000)]
         [SerializeField] private int m_MaxAmount = 1;
 
-        private bool m_IsNew = false;
+        private bool m_IsNew = true;
 
         #region Properties
         public string DropIdentifier => m_DropIdentifier.Identifier;
@@ -36,14 +36,14 @@ namespace AdventuresUnknownSDK.Core.Objects.DropTables
         //Used for Editor Tool Only
         internal void UpdateIfNew()
         {
-            if (!m_IsNew)
+            if (m_IsNew)
             {
                 DropChance dc = new DropChance();
                 m_DropIdentifier = dc.m_DropIdentifier;
                 m_Weight = dc.m_Weight;
                 m_MinAmount = dc.m_MinAmount;
                 m_MaxAmount = dc.m_MaxAmount;
-                m_IsNew = true;
+                m_IsNew = false;
             }
         }
         public bool ConsistencyCheck()

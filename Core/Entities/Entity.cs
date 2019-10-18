@@ -1,5 +1,6 @@
 ﻿using AdventuresUnknownSDK.Core.Log;
 using AdventuresUnknownSDK.Core.Managers;
+using AdventuresUnknownSDK.Core.Objects.Effects;
 using AdventuresUnknownSDK.Core.Objects.Mods;
 using AdventuresUnknownSDK.Core.Objects.Mods.Actions;
 using AdventuresUnknownSDK.Core.Objects.Mods.Actions.ActionObjects;
@@ -13,12 +14,10 @@ using UnityEngine.Events;
 namespace AdventuresUnknownSDK.Core.Entities
 {
     [Serializable]
-    public class Entity
+    public class Entity : IActiveStat
     {
-        [NonSerialized] private GameObject m_GameObject = null;
-        [NonSerialized] private List<IActiveStat> m_IActiveStats = new List<IActiveStat>();
+        [NonSerialized] private EntityBehaviour m_EntityBehaviour = null;
         [NonSerialized] private Dictionary<string, Stat> m_Stats = new Dictionary<string, Stat>();
-        [NonSerialized] private List<ModType> m_ModTypes = new List<ModType>();
 
         [NonSerialized] private Dictionary<Stat, List<BaseAction>> m_NotifyCollection = new Dictionary<Stat, List<BaseAction>>();
         [NonSerialized] private Dictionary<object, TimerObject> m_TimerObjects = new Dictionary<object, TimerObject>();
@@ -28,43 +27,26 @@ namespace AdventuresUnknownSDK.Core.Entities
         [SerializeField] private EntityDescription m_Description = new EntityDescription();
         [HideInInspector] [SerializeField] private bool m_StatsChanged = false;
 
-        private UnityEvent m_OnStatsChangedEvent = new UnityEvent();
+        [NonSerialized] private List<Entity> m_RegisteredEntities = new List<Entity>();
+        [NonSerialized] private Dictionary<string, EffectContext> m_Effects = new Dictionary<string, EffectContext>();
+
+        private Dictionary<string, List<Entity>> m_MinionsDictionary = new Dictionary<string, List<Entity>>();
 
         #region Properties
         public Stat[] Stats
         {
             get
             {
-                RecalculateStats();
                 return m_Stats.Values.ToArray();
-            }
-        }
-
-        public bool StatsChanged
-        {
-            get
-            {
-                if (m_StatsChanged) return true;
-                foreach (IActiveStat activeStat in m_IActiveStats)
-                {
-                    if (activeStat.StatsChanged) return true;
-                }
-                return false;
-            }
-            set
-            {
-                m_StatsChanged = value;
-                foreach (IActiveStat activeStat in m_IActiveStats)
-                {
-                    activeStat.StatsChanged = value;
-                }
             }
         }
 
         public bool CanTick { get => m_CanTick; set => m_CanTick = value; }
         public EntityDescription Description { get => m_Description; set => m_Description = value; }
-        public GameObject GameObject { get => m_GameObject; set => m_GameObject = value; }
+        public EntityBehaviour EntityBehaviour { get => m_EntityBehaviour; set => m_EntityBehaviour = value; }
         public bool IsDead { get; set; }
+        public List<Entity> RegisteredEntities { get => m_RegisteredEntities; }
+        public EffectContext[]  Effects { get => m_Effects.Values.ToArray();  }
 
         #endregion
         #region Methods
@@ -75,12 +57,12 @@ namespace AdventuresUnknownSDK.Core.Entities
         }
         public void Reset()
         {
-            m_IActiveStats.Clear();
             m_Stats.Clear();
-            m_ModTypes.Clear();
             m_NotifyCollection.Clear();
             m_TimerObjects.Clear();
             m_ObjectDictionary.Clear();
+            m_MinionsDictionary.Clear();
+            m_Effects.Clear();
             m_StatsChanged = false;
         }
         public void Tick(float time)
@@ -88,32 +70,20 @@ namespace AdventuresUnknownSDK.Core.Entities
             if (CanTick)
             {
                 UpdateTimers(time);
+                TickEffects(time);
                 TickStats(time);
             }
         }
 
-        private void RecalculateStats()
+        private void TickEffects(float time)
         {
-            if (StatsChanged)
+            EffectContext[] effectContexts = m_Effects.Values.ToArray();
+            for (int i = 0; i < effectContexts.Length; i++)
             {
-                StatsChanged = false;
-                List<string> keys = m_Stats.Keys.ToList();
-                Dictionary<string, float> currentValues = new Dictionary<string, float>();
-                for (int i = 0; i < keys.Count; i++)
+                effectContexts[i].Update(time);
+                if (effectContexts[i].IsGone())
                 {
-                    Stat stat = GetStat(keys[i]);
-                    currentValues.Add(keys[i], stat.Current);
-                }
-                m_ModTypes.Clear();
-                m_NotifyCollection.Clear();
-                m_Stats.Clear();
-                foreach (IActiveStat activeStat in m_IActiveStats)
-                {
-                    activeStat.Initialize(this);
-                }
-                foreach(var pair in currentValues)
-                {
-                    GetStat(pair.Key).Current = pair.Value;
+                    RemoveEffect(effectContexts[i].Effect.Identifier);
                 }
             }
         }
@@ -138,6 +108,7 @@ namespace AdventuresUnknownSDK.Core.Entities
         {
             Notify(ActionTypeManager.Tick, new TickContext(time));
             Stat[] stats = m_Stats.Values.ToArray();
+            bool changed = false;
             foreach (Stat stat in stats)
             {
                 if (stat.StatChanged)
@@ -151,7 +122,12 @@ namespace AdventuresUnknownSDK.Core.Entities
                         }
                     }
                     stat.StatChanged = false;
+                    changed = true;
                 }
+            }
+            if (changed)
+            {
+                ChangeModifiersAll();
             }
         }
         private List<BaseAction> GetNotifyStatList(Stat stat)
@@ -179,11 +155,10 @@ namespace AdventuresUnknownSDK.Core.Entities
         }
         public void Notify(ActionType actionType, ActionContext actionContext)
         {
-            RecalculateStats();
-            List<BaseAction> baseActions = ModActionManager.GetActions(actionType, m_ModTypes.ToArray());
+            List<BaseAction> baseActions = ModActionManager.GetActions(actionType, null);
             foreach (BaseAction baseAction in baseActions)
             {
-                baseAction.Notify(this, actionContext);
+                baseAction.PreNotify(this, actionContext);
             }
         }
         public void AddTimer(TimerObject timerObject)
@@ -204,7 +179,12 @@ namespace AdventuresUnknownSDK.Core.Entities
         }
         public bool AddObject(object source, object obj, bool replace)
         {
-            if (!replace && m_ObjectDictionary.ContainsKey(source)) return false;
+            object value;
+            if (m_ObjectDictionary.TryGetValue(source,out value))
+            {
+                if (!replace) return false;
+                m_ObjectDictionary.Remove(source);
+            }
             m_ObjectDictionary.Add(source, obj);
             return true;
         }
@@ -213,32 +193,109 @@ namespace AdventuresUnknownSDK.Core.Entities
             if (!m_ObjectDictionary.ContainsKey(source)) return null;
             return m_ObjectDictionary[source];
         }
-        public virtual void AddActiveStat(IActiveStat activeStat)
+
+        public T GetObject<T>(object source)
         {
-            if (m_IActiveStats.Contains(activeStat)) return;
-            m_IActiveStats.Add(activeStat);
-            StatsChanged = true;
+            object obj = GetObject(source);
+
+            if (obj!= null && obj is T)
+            {
+                return (T)(obj);
+            }
+            return default(T);
         }
-        public virtual void RemoveActiveStat(IActiveStat activeStat)
+
+        public virtual void RemoveAllModifiersBySource(object source)
         {
-            if (m_IActiveStats.Remove(activeStat))
-                StatsChanged = true;
+            Stat[] stats = m_Stats.Values.ToArray();
+            foreach (Stat stat in stats)
+            {
+                stat.RemoveStatModifiersBySource(source);
+            }
+        }
+        public void ApplyEffect(string effectIdentifier, float duration, float value)
+        {
+            EffectContext context;
+            if (!m_Effects.TryGetValue(effectIdentifier, out context))
+            {
+                Effect effect = ObjectsManager.FindObjectByIdentifier<Effect>(effectIdentifier);
+
+                if (effect == null)
+                {
+                    GameConsole.LogFormat("Effect {0} not found", effectIdentifier);
+                    return;
+                }
+                context = new EffectContext(this, effect);
+                m_Effects.Add(effectIdentifier, context);
+            }
+            context.AddEffect(duration, value);
+        }
+
+        public void RemoveEffect(string effectIdentifier)
+        {
+            EffectContext context;
+            if (m_Effects.TryGetValue(effectIdentifier, out context))
+            {
+                context.Remove();
+                m_Effects.Remove(effectIdentifier);
+            }
+        }
+
+        public void AddMinion(string modTypeIdentifier, Entity entity)
+        {
+            List<Entity> minionList;
+            if (!m_MinionsDictionary.TryGetValue(modTypeIdentifier, out minionList))
+            {
+                minionList = new List<Entity>();
+                m_MinionsDictionary.Add(modTypeIdentifier, minionList);
+            }
+            if (minionList.Contains(entity)) return;
+            GetStat(modTypeIdentifier).Current++;
+            minionList.Add(entity);
+        }
+
+        public void RemoveMinion(string modTypeIdentifier, Entity entity)
+        {
+            List<Entity> minionList;
+            if (m_MinionsDictionary.TryGetValue(modTypeIdentifier, out minionList))
+            {
+                if (minionList.Remove(entity))
+                {
+                    GetStat(modTypeIdentifier).Current--;
+                }
+            }
+        }
+
+        public List<Entity> GetMinions(string modTypeIdentifier)
+        {
+            List<Entity> minionList;
+            m_MinionsDictionary.TryGetValue(modTypeIdentifier, out minionList);
+            return minionList;
+        }
+
+        public List<Entity> GetAllMinions()
+        {
+            List<Entity> minionList = new List<Entity>();
+            foreach (var value in m_MinionsDictionary.Values)
+            {
+                minionList.AddRange(value);
+            }
+            return minionList.Distinct().ToList();
         }
 
         public Stat GetStat(string modTypeIdentifier)
         {
-            RecalculateStats();
             if (!m_Stats.ContainsKey(modTypeIdentifier))
             {
                 Stat newStat = new Stat(ObjectsManager.FindObjectByIdentifier<ModType>(modTypeIdentifier));
                 if (newStat.ModType == null)
                 {
                     GameConsole.LogWarningFormat("Could not get Stat with Identifier {0}", modTypeIdentifier);
+                    Debug.LogWarningFormat(this.EntityBehaviour, "Could not get Stat with Identifier{0}", modTypeIdentifier);
                 }
                 else
                 {
                     m_Stats.Add(modTypeIdentifier, newStat);
-                    m_ModTypes.Add(newStat.ModType);
 
                     List<int> actionValues = ModActionManager.GetAllRegisteredActionValues();
                     foreach (int actionValue in actionValues)
@@ -256,20 +313,15 @@ namespace AdventuresUnknownSDK.Core.Entities
         }
         
 
+
         public void CopyFrom(Entity entity)
         {
             if (entity == null) return;
-            GameObject = entity.GameObject;
-            entity.RecalculateStats();
-            foreach (var activeStat in entity.m_IActiveStats)
-            {
-                m_IActiveStats.Add(activeStat);
-            }
+            EntityBehaviour = entity.EntityBehaviour;
 
             foreach (var pair in entity.m_Stats)
             {
                 m_Stats.Add(pair.Key, pair.Value.Copy());
-                m_ModTypes.Add(pair.Value.ModType);
             }
 
             foreach (var pair in entity.m_NotifyCollection)
@@ -281,12 +333,6 @@ namespace AdventuresUnknownSDK.Core.Entities
         public void AddFrom(Entity entity)
         {
             if (entity == null) return;
-            RecalculateStats();
-            entity.RecalculateStats();
-            foreach (var activeStat in entity.m_IActiveStats)
-            {
-                m_IActiveStats.Add(activeStat);
-            }
             foreach (var pair in entity.m_Stats)
             {
                 if (m_Stats.ContainsKey(pair.Key))
@@ -296,7 +342,6 @@ namespace AdventuresUnknownSDK.Core.Entities
                     continue;
                 }
                 m_Stats.Add(pair.Key, pair.Value.Copy());
-                m_ModTypes.Add(pair.Value.ModType);
             }
             foreach (var pair in entity.m_NotifyCollection)
             {
@@ -315,7 +360,56 @@ namespace AdventuresUnknownSDK.Core.Entities
             }
         }
 
-       
+        private void ChangeModifiersAll()
+        {
+            for (int i = 0; i < RegisteredEntities.Count; i++)
+            {
+                Entity entity = RegisteredEntities[i];
+                if (entity == null)
+                {
+                    RegisteredEntities.RemoveAt(i);
+                    i--;
+                    continue;
+                }
+                AddModifiers(entity);
+            }
+        }
+        private void AddModifiers(Entity entity)
+        {
+            if (entity == null) return;
+            RemoveAllModifiers(entity);
+
+            foreach(Stat stat in Stats)
+            {
+                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.Flat, CalculationType.Flat, this));
+                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.Increased-1.0f, CalculationType.Increased, this));
+                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.More-1.0f, CalculationType.More, this));
+                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.FlatExtra, CalculationType.FlatExtra, this));
+            }
+        }
+
+
+        private void RemoveAllModifiers(Entity entity)
+        {
+            if (entity == null) return;
+            entity.RemoveAllModifiersBySource(this);
+        }
+
+        public void Register(Entity entity)
+        {
+            if (entity == null) return;
+            if (RegisteredEntities.Contains(entity)) return;
+            RegisteredEntities.Add(entity);
+            AddModifiers(entity);
+        }
+
+        public void Unregister(Entity entity)
+        {
+            if (entity == null) return;
+            RegisteredEntities.Remove(entity);
+            RemoveAllModifiers(entity);
+        }
+
         #endregion
     }
 }

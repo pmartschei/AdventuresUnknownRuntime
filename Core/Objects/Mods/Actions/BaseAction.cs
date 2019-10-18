@@ -29,6 +29,12 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions
         public virtual void Initialize(Entity activeStats)
         {
         }
+
+        public virtual void PreNotify(Entity activeStats, ActionContext actionContext)
+        {
+            if (activeStats.GetStat(ModType.Identifier).IsDefault) return;
+            Notify(activeStats, actionContext);
+        }
         public abstract void Notify(Entity activeStats, ActionContext actionContext);
         #endregion
     }

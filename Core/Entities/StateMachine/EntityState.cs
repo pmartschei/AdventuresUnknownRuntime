@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static AdventuresUnknownSDK.Core.Entities.StateMachine.EntityStateMachine;
 
 //Source RoR2
 
@@ -68,6 +69,10 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine
         public virtual void OnDrawGizmosSelected()
         {
 
+        }
+        protected CommonComponents CommonComponents
+        {
+            get { return EntityStateMachine.GameObjectComponents; }
         }
         protected GameObject gameObject
         {

@@ -1,4 +1,6 @@
-﻿using AdventuresUnknownSDK.Core.Log;
+﻿using AdventuresUnknownSDK.Core.Entities.Controllers.Interfaces;
+using AdventuresUnknownSDK.Core.Entities.Weapons;
+using AdventuresUnknownSDK.Core.Log;
 using AdventuresUnknownSDK.Core.Logic.ActiveGemContainers;
 using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Enemies;
@@ -11,149 +13,263 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace AdventuresUnknownSDK.Core.Entities.Controllers
 {
-    [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(EnemyActiveGemContainer))]
     [RequireComponent(typeof(Animator))]
-    public class EnemyController : EntityController
+    //[RequireComponent(typeof(Rigidbody))]
+    public class EnemyController : EntityController,IAttackController,ITranslationalController,IRotationalController, IMuzzleComponentController
     {
         [SerializeField] private EntityBehaviour m_EntityComponent = null;
-        
+        [SerializeField] private NavMeshAgent m_NavMeshAgent = null;
+        [SerializeField] private Muzzle[] m_Muzzles = null;
+
+        private Dictionary<string, Muzzle> m_MuzzleDictionary = new Dictionary<string, Muzzle>();
+
         private EnemyActiveGemContainer m_EnemyActiveGemContainer = null;
 
 
         #region Properties
         public Rigidbody RigidBody { get; private set; }
+        public NavMeshAgent NavMeshAgent { get => m_NavMeshAgent; }
+        public Muzzle[] Muzzles { get => m_Muzzles; set => m_Muzzles = value; }
         #endregion
 
 
         #region Methods
+        public override void OnStart()
+        {
+            base.OnStart();
+
+            foreach (Muzzle muzzle in m_Muzzles)
+            {
+                if (muzzle == null) continue;
+                if (m_MuzzleDictionary.ContainsKey(muzzle.MuzzleName))
+                {
+                    GameConsole.LogErrorFormat("Skipped duplicate muzzle -> {0}, {1}", muzzle.MuzzleName, this.name);
+                    continue;
+                }
+                m_MuzzleDictionary.Add(muzzle.MuzzleName, muzzle);
+            }
+        }
         private void Awake()
         {
             Animator = GetComponent<Animator>();
             m_EnemyActiveGemContainer = GetComponent<EnemyActiveGemContainer>();
             RigidBody = GetComponent<Rigidbody>();
             SpaceShip = m_EntityComponent;
+            Entity = SpaceShip.Entity;
             LookingDestination = transform.position + new Vector3(0, 1, 0);
+            if (m_NavMeshAgent)
+            {
+                m_NavMeshAgent.Warp(Head.position);
+                //m_NavMeshAgent.updatePosition = false;
+                //m_NavMeshAgent.updateRotation = false;
+                //m_NavMeshAgent.updateUpAxis = false;
+            }
         }
 
         private void Update()
         {
             if (SpaceShip.Entity.IsDead)
             {
-                Destroy(this.gameObject);
+                Animator.SetBool("Dead", true);
+                return;
+            }
+            Stat acceleration = SpaceShip.Entity.GetStat("core.modtypes.ship.acceleration");
+            Stat speed = SpaceShip.Entity.GetStat("core.modtypes.ship.movementspeed");
+            if (m_NavMeshAgent)
+            {
+                m_NavMeshAgent.acceleration = acceleration.Calculated;
+                m_NavMeshAgent.speed = speed.Calculated;
+                if (m_NavMeshAgent.isActiveAndEnabled && !m_NavMeshAgent.isStopped)
+                {
+                    if (Target != null)
+                    {
+                        //AimTowardsTarget();
+                    }
+                    else
+                    {
+                        //if (m_NavMeshAgent.path.corners.Length > 1)
+                            //AimTowardsPosition(m_NavMeshAgent.path.corners[1]);
+                    }
+                }
             }
         }
 
         private void FixedUpdate()
         {
-            RigidBody.drag = SpaceShip.Entity.GetStat("core.modtypes.ship.movementresistance").Calculated;
             Stat speed = SpaceShip.Entity.GetStat("core.modtypes.ship.movementspeed");
-            //repel
-            Collider[] colliders = Physics.OverlapSphere(this.transform.position, 0.75f);
-
-            foreach(Collider collider in colliders)
+            speed.Current = NavMeshAgent.velocity.magnitude;
+            Transform transform = Head;
+            if (transform.position == LookingDestination)
             {
-                EntityController controller = collider.GetComponentInParent<EntityController>();
-                if (controller == null) continue;
-                if (controller.SpaceShip.Entity.Description.Enemy != this.SpaceShip.Entity.Description.Enemy) continue;
-                RigidBody.AddForce((this.transform.position - controller.gameObject.transform.position).normalized * 10*speed.Calculated);
+                LookingDestination = transform.position + transform.forward;
             }
-            //repel
-
-            if (RigidBody.velocity.magnitude > speed.Calculated)
-            {
-                RigidBody.velocity = RigidBody.velocity.normalized * speed.Calculated;
-            }
-            speed.Current = RigidBody.velocity.magnitude;
         }
-        
-        public void SetAnimFloat(string name,float value)
+        public void Attack(EntityController origin, int index,params Muzzle[] muzzles)
         {
-            Animator.SetFloat(name, value);
+            m_EnemyActiveGemContainer.Spawn(origin, index,muzzles);
         }
-        public void SetAnimBool(string name, bool value)
+        public void Attack(int index, params Muzzle[] muzzles)
         {
-            Animator.SetBool(name, value);
+            m_EnemyActiveGemContainer.Spawn(this, index, muzzles);
         }
-        public void SetAnimInt(string name, int value)
+        public bool IsNearTarget(int index,float multiplier = 0.9f)
         {
-            Animator.SetInteger(name, value);
-        }
-
-        public void SetAnimTrigger(string name)
-        {
-            Animator.SetTrigger(name);
-        }
-        
-        public void Attack()
-        {
-            m_EnemyActiveGemContainer.Spawn(0, transform.position, LookingDestination);
-        }
-        
-        public bool IsNearTarget()
-        {
-            Vector3 distance = transform.position - Target.transform.position;
-            float attackMax = m_EnemyActiveGemContainer.GetNextAttackMaxDistance();
+            Vector3 distance = transform.position - Target.Head.position;
+            float attackMax = GetAttackMaxDistance(index);
             attackMax *= attackMax;
-            return distance.sqrMagnitude <= (attackMax * 0.9f);
+            return distance.sqrMagnitude <= (attackMax * multiplier);
         }
-        public bool HasCooldown()
+        public float GetAttackMaxDistance(int index)
         {
-            return CooldownManager.HasCooldown(SpaceShip.Entity);
+            return m_EnemyActiveGemContainer.GetAttackMaxDistance(index);
         }
-        
-        public void AimTowardsTarget()
+        public bool HasCooldown(EntityController origin, int index)
+        {
+            return m_EnemyActiveGemContainer.HasCooldown(origin,index);
+        }
+        public bool HasCooldown(int index)
+        {
+            return HasCooldown(this, index);
+        }
+        public bool IsAttackValid(int index)
+        {
+            return m_EnemyActiveGemContainer.IsIndexValid(index);
+        }
+        public bool RequiresTarget(int index)
+        {
+            return m_EnemyActiveGemContainer.RequiresTarget(index);
+        }
+
+        public float GetAttackPriority(int index)
+        {
+            return m_EnemyActiveGemContainer.GetAttackPriority(index,this,this.Target);
+        }
+
+        public bool AimTowardsTarget()
         {
             if (Target)
             {
-                AimTowardsPosition(Target.transform.position);
+                return AimTowardsPosition(Target.Head.position);
             }
+            return false;
         }
         public bool AimTowardsPosition(Vector3 position)
         {
-            float z = Mathf.Atan2((position.y - transform.position.y),
-                (position.x - transform.position.x)) * Mathf.Rad2Deg;
+            Transform transform = Head;
             float distance = Vector3.Distance(transform.position, position);
-            Quaternion targetRotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, z - 90.0f);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                Time.deltaTime * 360.0f);
-            LookingDestination = transform.up * distance + transform.position;
-            Quaternion normTransform = Quaternion.Normalize(transform.rotation);
-            Quaternion normTarget = Quaternion.Normalize(targetRotation);
-            if (Quaternion.Angle(normTransform,normTarget) <= 0.01f) return true;
+            position = position - transform.position;
+            if (position == Vector3.zero) return true;
+            Quaternion targetRotation = Quaternion.LookRotation(position);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, Time.deltaTime * 180.0f);
+            LookingDestination = transform.forward * distance + transform.position;
+            //Quaternion normTransform = Quaternion.Normalize(transform.rotation);
+            //Quaternion normTarget = Quaternion.Normalize(targetRotation);
+            if (Quaternion.Angle(transform.rotation, targetRotation) <= 0.01f) return true;
             return false;
         }
-
         public void RotateTowardsPosition(Vector3 position)
         {
-            float z = Mathf.Atan2((position.y - transform.position.y),
-                (position.x - transform.position.x)) * Mathf.Rad2Deg;
+            Transform transform = Head;
             float distance = Vector3.Distance(transform.position, position);
-            Quaternion targetRotation = Quaternion.Euler(transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, z - 90.0f);
-            transform.rotation = targetRotation;
-            LookingDestination = transform.up * distance + transform.position;
+            position = position - transform.position;
+            if (position == Vector3.zero) return;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(position), Time.deltaTime * 180.0f);
+            LookingDestination = transform.forward * distance + transform.position;
         }
 
-        public void MoveTowardsTarget()
+        public Vector3[] GetNavPoints()
+        {
+            if (!NavMeshAgent) return new Vector3[] { Head.position };
+            return NavMeshAgent.path.corners;
+        }
+        public bool MoveTowardsTarget()
         {
             if (Target)
             {
-                MoveTowardsPosition(Target.transform.position);
+                return MoveTowardsPosition(Target.Head.position);
+            }
+            return false;
+        }
+        public bool MoveTowardsPosition(Vector3 position)
+        {
+            if (!NavMeshAgent) return false;
+            NavMeshAgent.destination = position;
+
+            NavMeshHit hit;
+            NavMesh.SamplePosition(position, out hit,(position - Head.position).magnitude,NavMesh.AllAreas);
+
+            NavMeshPath path = new NavMeshPath();
+            if (NavMesh.CalculatePath(Head.position, hit.position, NavMesh.AllAreas, path))
+            {
+                NavMeshAgent.path = path;
+                NavMeshAgent.isStopped = false;
+                if (path.status == NavMeshPathStatus.PathComplete)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        public void StopMove()
+        {
+            if (!NavMeshAgent) return;
+            NavMeshAgent.isStopped = true;
+        }
+        public void ResumeMove()
+        {
+            if (!NavMeshAgent) return;
+            NavMeshAgent.isStopped = false;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!Application.isPlaying || !m_NavMeshAgent) return;
+            Vector3[] pathPoints = new Vector3[NavMeshAgent.path.corners.Length + 1];
+            NavMeshAgent.path.corners.CopyTo(pathPoints, 0);
+            pathPoints[pathPoints.Length - 1] = NavMeshAgent.pathEndPosition;
+            Gizmos.color = Color.green;
+            for (int i = 0; i < pathPoints.Length - 1; i++)
+            {
+                Gizmos.DrawLine(pathPoints[i], pathPoints[i + 1]);
             }
         }
-
-        public void MoveTowardsPosition(Vector3 position)
+        public Muzzle FindMuzzle(string name)
         {
-            Vector3 distance = position - transform.position;
-            Stat speed = SpaceShip.Entity.GetStat("core.modtypes.ship.acceleration");
-            RigidBody.AddForce(distance.normalized * speed.Calculated);
+            Muzzle muzzle;
+            m_MuzzleDictionary.TryGetValue(name, out muzzle);
+            return muzzle;
         }
 
+        public Muzzle[] FindMuzzles(params string[] names)
+        {
+            List<Muzzle> muzzles = new List<Muzzle>();
+            if (names != null)
+            {
+                foreach (string name in names)
+                {
+                    Muzzle muzzle = FindMuzzle(name);
+                    if (!muzzle) continue;
+                    muzzles.Add(muzzle);
+                }
+            }
+
+            return muzzles.ToArray();
+        }
+
+        public Entity GetEntity(int index)
+        {
+            return m_EnemyActiveGemContainer.CalculateEntity(index);
+        }
         #endregion
     }
 }

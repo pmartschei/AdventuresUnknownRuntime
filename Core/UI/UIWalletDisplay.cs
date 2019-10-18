@@ -42,8 +42,9 @@ namespace AdventuresUnknownSDK.Core.UI
                 m_WalletDisplays[i].SetCurrency(currencies[i]);
                 m_WalletDisplays[i].SetText(PlayerManager.PlayerWallet.GetValue(currencies[i].Identifier).ToString());
             }
-            for(int i = currencies.Length;i< m_WalletDisplays.Length; i++)
+            for(int i = currencies.Length;i < m_WalletDisplays.Length; i++)
             {
+                if (m_WalletDisplays[i] == null) continue;
                 m_WalletDisplays[i].gameObject.SetActive(false);
             }
         }

@@ -44,6 +44,18 @@ namespace AdventuresUnknownSDK.Core.Objects.Tags
             return m_ConsistentTags.Count != 0;
         }
 
+        public string[] ToArray()
+        {
+            string[] tags = new string[Count];
+            int i = 0;
+            foreach (Tag tag in this)
+            {
+                tags[i] = tag.Identifier;
+                i++;
+            }
+            return tags;
+        }
+
         public void Add(Tag item)
         {
             if (item == null) return;

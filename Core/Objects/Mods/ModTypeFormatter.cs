@@ -32,21 +32,21 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         }
 
         [LowerCaseOnly]
-        [SerializeField] private string m_Type = "empty_identifier";
-        [SerializeField] private LocalizationString m_Description = new LocalizationString("core.mft.default.description");
+        [SerializeField] private string m_Type = "default";
+        [SerializeField] private LocalizationString m_Description = new LocalizationString("core.mtf.default.description");
         [SerializeField] private InternalFormat m_AdditionalFormat = new InternalFormat(
-            "core.mft.default.flatpre",
-            "core.mft.default.flatmain",
-            "core.mft.default.flatpost");
+            "core.mtf.default.flatpre",
+            "core.mtf.default.flatmain",
+            "core.mtf.default.flatpost");
         [SerializeField] private InternalFormat m_IncreasedFormat = new InternalFormat(
-            "core.mft.default.increasedpre",
-            "core.mft.default.increasedmain",
-            "core.mft.default.increasedpost");
+            "core.mtf.default.increasedpre",
+            "core.mtf.default.increasedmain",
+            "core.mtf.default.increasedpost");
         [SerializeField] private InternalFormat m_MoreFormat = new InternalFormat(
-            "core.mft.default.morepre",
-            "core.mft.default.moremain",
-            "core.mft.default.morepost");
-        [SerializeField] private bool m_ColorsEnabled = true;
+            "core.mtf.default.morepre",
+            "core.mtf.default.moremain",
+            "core.mtf.default.morepost");
+        [SerializeField] private bool m_ColorsEnabled = false;
 
 
         #region Properties
@@ -58,6 +58,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         #region Methods
         public virtual string ToText(float value,ModType modType, CalculationType calculationType,string htmlColor)
         {
+            if (value == 0.0f) return string.Empty;
             InternalFormat format = m_AdditionalFormat;
             switch (calculationType)
             {
@@ -86,13 +87,24 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             }
             sb.Append(preString+(!preString.Equals(string.Empty)?" ":""));
             sb.Append("<b>");
-            sb.AppendFormat("{0:" + format.Main + (format.Main.LocalizedString.Contains(";") ? "" : ";" + format.Main) + "}",value);
-            sb.Append(format.Main.Equals(string.Empty) ? "" : " ");
+            if (m_ColorsEnabled)
+            {
+                sb.Append("<color=#" + htmlColor + ">");
+                sb.AppendFormat("{0:" + format.Main + (format.Main.LocalizedString.Contains(";") ? "" : ";" + format.Main) + "}", value);
+                sb.Append("</color>");
+            }
+            else
+            {
+                sb.AppendFormat("{0:" + format.Main + (format.Main.LocalizedString.Contains(";") ? "" : ";" + format.Main) + "}", value);
+            }
+            sb.Append(format.Main.LocalizedString.Equals(string.Empty) ? "" : " ");
             sb.Append("</b>");
             sb.Append(postString+(!postString.Equals(string.Empty) ? " " : ""));
             if (m_ColorsEnabled)
             {
-                sb.Append("<color=#" + htmlColor + ">" + Description + "</color>");
+                sb.Append("<color=#" + htmlColor + ">");
+                sb.Append(Description);
+                sb.Append("</color>");
             }
             else
             {

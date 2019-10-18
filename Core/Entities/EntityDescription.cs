@@ -11,13 +11,15 @@ namespace AdventuresUnknownSDK.Core.Entities
         [SerializeField] private Enemy m_Enemy = null;
         [SerializeField] private EntityType m_EntityType = EntityType.SpaceShip;
         [SerializeField] private bool m_IsMinion = false;
-        [SerializeField] private GameObject m_Parent = null;
+        [SerializeField] private string m_MinionCountModType = "";
+        [SerializeField] private EntityBehaviour m_Parent = null;
         #region Properties
         public bool IsPlayer { get => m_IsPlayer; set => m_IsPlayer = value; }
         public Enemy Enemy { get => m_Enemy; set => m_Enemy = value; }
         public EntityType EntityType { get => m_EntityType; set => m_EntityType = value; }
         public bool IsMinion { get => m_IsMinion; set => m_IsMinion = value; }
-        public GameObject Parent { get => m_Parent; set => m_Parent = value; }
+        public string MinionCountModType { get => m_MinionCountModType; set => m_MinionCountModType = value; }
+        public EntityBehaviour Parent { get => m_Parent; set => m_Parent = value; }
         #endregion
     }
 }

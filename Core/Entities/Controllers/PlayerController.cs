@@ -1,5 +1,8 @@
 ﻿using AdventuresUnknownSDK.Core.Attributes;
 using AdventuresUnknownSDK.Core.Entities;
+using AdventuresUnknownSDK.Core.Entities.Controllers.Interfaces;
+using AdventuresUnknownSDK.Core.Entities.Weapons;
+using AdventuresUnknownSDK.Core.Log;
 using AdventuresUnknownSDK.Core.Logic.ActiveGemContainers;
 using AdventuresUnknownSDK.Core.Managers;
 using System;
@@ -11,21 +14,37 @@ using UnityEngine;
 
 namespace AdventuresUnknownSDK.Core.Entities.Controllers
 {
-    public class PlayerController : EntityController
+    public class PlayerController : EntityController,IMuzzleComponentController
     {
         [SerializeField] private Rigidbody m_RigidBody = null;
-        [SerializeField] private GenericActiveGemContainer m_PlayerActiveGemContainer = null;
+        [SerializeField] private Muzzle[] m_Muzzles = null;
+
+        private Dictionary<string, Muzzle> m_MuzzleDictionary = new Dictionary<string, Muzzle>();
+
 
         #region Properties
-        public GenericActiveGemContainer PlayerActiveGemContainer { get => m_PlayerActiveGemContainer; set => m_PlayerActiveGemContainer = value; }
+        public Muzzle[] Muzzles { get => m_Muzzles; set => m_Muzzles = value; }
         #endregion
 
         #region Methods
         public override void OnStart()
         {
             base.OnStart();
+
+            foreach (Muzzle muzzle in m_Muzzles)
+            {
+                if (muzzle == null) continue;
+                if (m_MuzzleDictionary.ContainsKey(muzzle.MuzzleName))
+                {
+                    GameConsole.LogErrorFormat("Skipped duplicate muzzle -> {0}, {1}", muzzle.MuzzleName, this.name);
+                    continue;
+                }
+                m_MuzzleDictionary.Add(muzzle.MuzzleName, muzzle);
+            }
+
             SpaceShip = PlayerManager.SpaceShip;
             SpaceShip.gameObject.SetActive(true);
+            Entity = SpaceShip.Entity;
         }
 
         private void Update()
@@ -36,12 +55,11 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
                 LookingDestination = Camera.main.ScreenToWorldPoint(new Vector3(
                     Input.mousePosition.x,
                     Input.mousePosition.y,
-                    transform.position.z - Camera.main.transform.position.z
+                    Camera.main.transform.position.y - (Head.position.y)
                     ));
                 LookAt(LookingDestination);
             }
             UpdateMovement();
-            UpdateSkillActivations();
             if (SpaceShip.Entity.IsDead)
             {
                 SpaceShip.gameObject.SetActive(false);
@@ -51,13 +69,20 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
 
         private void LookAt(Vector3 position)
         {
-            if (Time.timeScale == 0.0f) return;
-            float z = Mathf.Atan2((position.y - transform.position.y),
-                (position.x - transform.position.x)) * Mathf.Rad2Deg;
-            this.transform.rotation = Quaternion.RotateTowards(
-                this.transform.rotation,
-                Quaternion.Euler(this.transform.rotation.eulerAngles.x, this.transform.rotation.eulerAngles.y, z - 90.0f),
-                Time.deltaTime * 360.0f);
+            if (m_RigidBody.velocity != Vector3.zero)
+                Head.rotation = Quaternion.LookRotation(m_RigidBody.velocity.normalized);
+            foreach(Muzzle muzzle in Muzzles)
+            {
+                if (!muzzle || muzzle.CanRotate) continue;
+                muzzle.transform.rotation = Quaternion.LookRotation(position - muzzle.transform.position);
+            }
+            //transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(position),Time.deltaTime*360.0f);
+            //float y = Mathf.Atan2((position.z - transform.position.z),
+            //    (position.x - transform.position.x)) * Mathf.Rad2Deg;
+            //this.transform.rotation = Quaternion.RotateTowards(
+            //    this.transform.rotation,
+            //    Quaternion.Euler(this.transform.rotation.eulerAngles.x, y + 90.0f,  this.transform.rotation.eulerAngles.z),
+            //    Time.deltaTime * 360.0f);
         }
 
         private void FixedUpdate()
@@ -75,32 +100,19 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             Stat acceleration = SpaceShip.Entity.GetStat("core.modtypes.ship.acceleration");
             if (Input.GetKey(KeyCode.W))
             {
-                m_RigidBody.AddForce(Vector3.up * acceleration.Calculated);
+                m_RigidBody.AddForce(Vector3.forward * acceleration.Calculated);
             }
             if (Input.GetKey(KeyCode.S))
             {
-                m_RigidBody.AddForce(-Vector3.up * acceleration.Calculated);
+                m_RigidBody.AddForce(-Vector3.forward * acceleration.Calculated);
             }
             if (Input.GetKey(KeyCode.D))
             {
                 m_RigidBody.AddForce(Vector3.right * acceleration.Calculated);
-                //Quaternion deltaRotation = Quaternion.Euler(new Vector3(0,0,-250) * Time.deltaTime);
-                //rigidBody.MoveRotation(rigidBody.rotation * deltaRotation);
             }
             if (Input.GetKey(KeyCode.A))
             {
                 m_RigidBody.AddForce(-Vector3.right * acceleration.Calculated);
-                //Quaternion deltaRotation = Quaternion.Euler(new Vector3(0, 0, 250) * Time.deltaTime);
-                //rigidBody.MoveRotation(rigidBody.rotation * deltaRotation);
-            }
-        }
-
-        private void UpdateSkillActivations()
-        {
-            if (!m_PlayerActiveGemContainer) return;
-            if (Input.GetKey(KeyCode.E))
-            {
-                m_PlayerActiveGemContainer.Spawn(0, this.transform.position, LookingDestination);
             }
         }
 
@@ -108,6 +120,29 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
         {
             if (!m_RigidBody) return false;
             return true;
+        }
+
+        public Muzzle FindMuzzle(string name)
+        {
+            Muzzle muzzle;
+            m_MuzzleDictionary.TryGetValue(name, out muzzle);
+            return muzzle;
+        }
+
+        public Muzzle[] FindMuzzles(params string[] names)
+        {
+            List<Muzzle> muzzles = new List<Muzzle>();
+            if (names != null)
+            {
+                foreach (string name in names)
+                {
+                    Muzzle muzzle = FindMuzzle(name);
+                    if (!muzzle) continue;
+                    muzzles.Add(muzzle);
+                }
+            }
+
+            return muzzles.ToArray();
         }
         #endregion
     }

@@ -1,4 +1,8 @@
 ﻿using AdventuresUnknownSDK.Core.Log;
+using AdventuresUnknownSDK.Core.Managers;
+using AdventuresUnknownSDK.Core.Objects.Mods;
+using AdventuresUnknownSDK.Core.Objects.Mods.Actions;
+using AdventuresUnknownSDK.Core.Objects.Mods.Actions.ActionObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,38 +19,44 @@ namespace AdventuresUnknownSDK.Core.Entities
         [SerializeField] private Attribute[] m_Attributes = null;
 
         private List<Attribute> m_ConsistentAttributes = new List<Attribute>();
-        #region Properties
 
-        public bool StatsChanged { get; set; }
+        private List<Entity> m_RegisteredEntities = new List<Entity>();
+
+        public Attribute[] Attributes { get => m_Attributes;
+            set
+            {
+                m_Attributes = value;
+                OnValidate();
+            }
+        }
+
+        private class InternalBaseAction : BaseAction
+        {
+            public override ActionType ActionType => ActionTypeManager.Calculation;
+
+            private Action m_Action = null;
+            public InternalBaseAction(Action action)
+            {
+                m_Action = action;
+            }
+            public override void Notify(Entity activeStats, ActionContext actionContext)
+            {
+                m_Action.Invoke();
+            }
+        }
+        #region Properties
 
         #endregion
 
         #region Methods
         private void Start()
         {
-            m_ConsistentAttributes.Clear();
-            foreach (Attribute attribute in m_Attributes)
-            {
-                if (!attribute.ConsistencyCheck())
-                {
-                    GameConsole.LogWarningFormat("Skipped inconsistent Attribute in BaseEntityStats: {0} in {1}", attribute.ModBaseIdentifier,this.gameObject);
-                    continue;
-                }
-                m_ConsistentAttributes.Add(attribute);
-            }
             if (m_Entity)
             {
-                m_Entity.Entity.AddActiveStat(this);
+                Register(m_Entity.Entity);
+                m_Entity.Entity.NotifyOnStatChange(m_Entity.Entity.GetStat("core.modtypes.utility.level"), new InternalBaseAction(ChangeModifiersAll));
             }
-            StatsChanged = true;
-        }
-        public void Initialize(Entity activeStat)
-        {
-            int level = 0;
-            foreach(Attribute attribute in m_ConsistentAttributes)
-            {
-                activeStat.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(level), attribute.ModBase.CalculationType, this));
-            }
+            OnValidate();
         }
         private void OnValidate()
         {
@@ -60,7 +70,43 @@ namespace AdventuresUnknownSDK.Core.Entities
                 }
                 m_ConsistentAttributes.Add(attribute);
             }
-            StatsChanged = true;
+            ChangeModifiersAll();
+        }
+
+        private void ChangeModifiersAll()
+        {
+            foreach(Entity entity in m_RegisteredEntities)
+            {
+                AddModifiers(entity);
+            }
+        }
+        
+        private void AddModifiers(Entity entity)
+        {
+            RemoveAllModifiers(entity);
+
+            foreach(Attribute attribute in m_ConsistentAttributes)
+            {
+                attribute.ModBase.AddStatModifierTo(entity,attribute.Value(entity.GetStat("core.modtypes.utility.level").Calculated),this);
+            }
+        }
+
+        private void RemoveAllModifiers(Entity entity)
+        {
+            entity.RemoveAllModifiersBySource(this);
+        }
+
+        public void Register(Entity entity)
+        {
+            if (m_RegisteredEntities.Contains(entity)) return;
+            m_RegisteredEntities.Add(entity);
+            AddModifiers(entity);
+        }
+
+        public void Unregister(Entity entity)
+        {
+            m_RegisteredEntities.Remove(entity);
+            RemoveAllModifiers(entity);
         }
         #endregion
     }

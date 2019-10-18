@@ -1,4 +1,6 @@
 ﻿using AdventuresUnknownSDK.Core.Entities;
+using AdventuresUnknownSDK.Core.Entities.Controllers;
+using AdventuresUnknownSDK.Core.Entities.Weapons;
 using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Objects.Items;
@@ -47,57 +49,110 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
         {
             UpdateListSizes(ActiveStats, m_Inventory.Object.Size);
             UpdateListSizes(m_DisplayMods, m_Inventory.Object.Size);
-            ActiveStats[slot] = new Entity();
-            ActiveStats[slot].AddActiveStat(m_Inventory.Object.Items[slot]);
-            Gem gem = m_Inventory.Object.Items[slot].Item as Gem;
-            if (gem != null)
+            if (ActiveStats[slot] == null)
+            {
+                ActiveStats[slot] = new Entity();
+                //hacky stuff
+                EntityStats.Entity.Register(ActiveStats[slot]);
+                if (slot == 0)
+                {
+                    for (int i = 1; i < m_Inventory.Object.Size; i++)
+                        m_Inventory.Object.Register(ActiveStats[slot], i);
+                }
+                else
+                {
+                    m_Inventory.Object.Register(ActiveStats[slot], 0);
+                }
+                if (slot == 1)
+                {
+                    m_Inventory.Object.Register(ActiveStats[slot], 2);
+                    m_Inventory.Object.Register(ActiveStats[slot], 5);
+                }
+                else if (slot == 2)
+                {
+                    m_Inventory.Object.Register(ActiveStats[slot], 1);
+                    m_Inventory.Object.Register(ActiveStats[slot], 3);
+                }
+                else if (slot == 3)
+                {
+                    m_Inventory.Object.Register(ActiveStats[slot], 2);
+                    m_Inventory.Object.Register(ActiveStats[slot], 4);
+                }
+                else if (slot == 4)
+                {
+                    m_Inventory.Object.Register(ActiveStats[slot], 3);
+                    m_Inventory.Object.Register(ActiveStats[slot], 5);
+                }
+                else if (slot == 5)
+                {
+                    m_Inventory.Object.Register(ActiveStats[slot], 1);
+                    m_Inventory.Object.Register(ActiveStats[slot], 4);
+                }
+            }
+            ActiveGem activeGem = m_Inventory.Object.Items[slot].Item as ActiveGem;
+            if (activeGem != null)
             {
                 List<string> displayList = new List<string>();
-                foreach(ModTypeIdentifier identifier in gem.DisplayMods)
+                foreach(ModTypeIdentifier identifier in activeGem.DisplayMods)
                 {
                     displayList.Add(identifier.Identifier);
                 }
                 m_DisplayMods[slot] = displayList.Distinct().ToArray();
             }
-            if (slot == 0)
+        }
+
+        public Entity CalculateEntity(int index,bool notifyAttackApply)
+        {
+            Entity entity = CalculateEntity(index);
+            if (notifyAttackApply)
             {
-                if (!m_Inventory.Object.Items[1].IsEmpty)
-                    ActiveStats[slot].AddActiveStat(m_Inventory.Object.Items[1]);
+                entity.Notify(ActionTypeManager.AttackApply, new AttackContext(m_Inventory.Object.Items[index].Item as ActiveGem));
             }
+            return entity;
         }
         public override Entity CalculateEntity(int index)
         {
-            ItemStack stack = m_Inventory.Object.Items[index];
-            if (stack.IsEmpty) return null;
-            ActiveGem activeGem = stack.Item as ActiveGem;
             Entity entity = new Entity();
             entity.CopyFrom(ActiveStats[index]);
-            entity.AddFrom(EntityStats.Entity);
-            entity.Notify(ActionTypeManager.AttackGeneration, new AttackContext(activeGem));
+            ItemStack stack = m_Inventory.Object.Items[index];
+            foreach (Objects.Mods.Attribute attribute in (stack.Item as ActiveGem).Attributes)
+            {
+                entity.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(stack.PowerLevel), attribute.ModBase.CalculationType, this));
+            }
             return entity;
+        }
+
+        public float GetCooldown(int index)
+        {
+            return CooldownManager.GetCooldown(m_Inventory.Object.Items[index]);
         }
         public string[] CalculateDisplayMods(int index)
         {
             return m_DisplayMods[index];
         }
-        #endregion
-        public override void Spawn(int index,Vector3 origin, Vector3 destination)
+        public override void Spawn(EntityController origin, int index,params Muzzle[] muzzles)
         {
             ItemStack stack = m_Inventory.Object.Items[index];
             if (stack.IsEmpty) return;
             if (CooldownManager.HasCooldown(stack)) return;
-            CooldownManager.AddCooldown(stack, 1.0f);
-            Entity entity = CalculateEntity(index);
-            entity.GameObject = EntityStats.gameObject;
+            if (CooldownManager.HasCooldown(origin.SpaceShip.Entity)) return;
+            Entity statsWithout = new Entity();
+            statsWithout.CopyFrom(ActiveStats[index]);
+            Entity entity = new Entity();
+            entity.CopyFrom(CalculateEntity(index,true));
+            statsWithout.EntityBehaviour = origin.SpaceShip;
+            entity.EntityBehaviour = origin.SpaceShip;
             CooldownContext cooldownContext = new CooldownContext(EntityStats.Entity);
             entity.Notify(ActionTypeManager.AttackCooldownGeneration, cooldownContext);
-            CooldownManager.AddCooldown(this.EntityStats.Entity, 1.0f);
             if (cooldownContext.CanUse)
             {
+                CooldownManager.AddCooldown(stack, entity.GetStat("core.modtypes.skills.cooldown").Calculated);
+                CooldownManager.AddCooldown(this.EntityStats.Entity, entity.GetStat("core.modtypes.skills.casttime").Calculated);
                 entity.Notify(ActionTypeManager.AttackCooldownApply, cooldownContext);
                 ActiveGem activeGem = stack.Item as ActiveGem;
-                activeGem.Activate(PlayerManager.PlayerController, entity, origin, destination);
+                activeGem.Activate(origin, statsWithout, stack.PowerLevel , muzzles);
             }
         }
+        #endregion
     }
 }

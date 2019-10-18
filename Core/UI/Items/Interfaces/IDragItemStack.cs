@@ -9,5 +9,6 @@ namespace AdventuresUnknownSDK.Core.UI.Items.Interfaces
     public interface IDragItemStack : IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerDownHandler
     {
         IInventorySlot IInventorySlot { get; }
+        UIDropItemStackFilter ItemStackFilter { get; }
     }
 }

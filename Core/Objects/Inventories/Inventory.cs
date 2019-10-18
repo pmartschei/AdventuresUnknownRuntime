@@ -21,7 +21,28 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         [NonSerialized]
         private IntEvent m_OnSlotUpdate = new IntEvent();
         [NonSerialized]
-        private bool m_StatsChanged = false;
+        private List<RegisteredEntity> m_RegisteredEntities = new List<RegisteredEntity>();
+
+        class RegisteredEntity
+        {
+            public List<int> Slots;
+            public Entity Entity;
+            public bool AllSlots;
+
+            public RegisteredEntity(Entity entity)
+            {
+                Slots = new List<int>();
+                AllSlots = false;
+                Entity = entity;
+            }
+            public override bool Equals(object obj)
+            {
+                RegisteredEntity re = obj as RegisteredEntity;
+
+                if (re == null) return false;
+                return re.Entity == this.Entity;
+            }
+        }
 
         #region Properties
         public int Size
@@ -49,39 +70,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         {
             get { return m_OnSlotUpdate; }
         }
-
-        public bool StatsChanged
-        {
-            get
-            {
-                if (m_StatsChanged) return true;
-                foreach (ItemStack itemStack in m_ItemStacks)
-                {
-                    if (itemStack.StatsChanged) return true;
-                }
-                return false;
-            }
-            set
-            {
-                m_StatsChanged = value;
-                foreach (ItemStack itemStack in m_ItemStacks)
-                {
-                    itemStack.StatsChanged = value;
-                }
-            }
-        }
+        
         #endregion
 
         #region Methods
-
-        public void Initialize(Entity activeStat)
-        {
-            foreach (ItemStack itemStack in m_ItemStacks)
-            {
-                if (itemStack.IsEmpty) continue;
-                itemStack.Initialize(activeStat);
-            }
-        }
+        
         public override void Initialize()
         {
             NextEmptySlot = 0;
@@ -111,17 +104,18 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
 
             ItemStack slotItemStack = m_ItemStacks[slotToInsert];
 
-            StatsChanged = true;
-
             if (slotItemStack.Item == null)
             {
-                m_ItemStacks[slotToInsert] = itemStack;
-                //slotItemStack.ItemIdentifier = itemStack.ItemIdentifier;
-                //slotItemStack.Amount = itemStack.Amount;
-                //slotItemStack.PowerLevel = itemStack.PowerLevel;
-                //slotItemStack.ImplicitMods = itemStack.ImplicitMods;
-                //slotItemStack.ExplicitMods = itemStack.ExplicitMods;
-                UpdateSlot(slotToInsert);
+                SetItemStack(itemStack, slotToInsert);
+                //UnregisterItemStack(m_ItemStacks[slotToInsert]);
+                //m_ItemStacks[slotToInsert] = itemStack;
+                //RegisterItemStack(itemStack);
+                ////slotItemStack.ItemIdentifier = itemStack.ItemIdentifier;
+                ////slotItemStack.Amount = itemStack.Amount;
+                ////slotItemStack.PowerLevel = itemStack.PowerLevel;
+                ////slotItemStack.ImplicitMods = itemStack.ImplicitMods;
+                ////slotItemStack.ExplicitMods = itemStack.ExplicitMods;
+                //UpdateSlot(slotToInsert);
                 return true;
             }
             else
@@ -137,7 +131,9 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         public void SetItemStack(ItemStack itemStack, int index)
         {
             if (index < 0 || index >= m_ItemStacks.Count) return;
+            UnregisterItemStack(m_ItemStacks[index],index);
             m_ItemStacks[index] = itemStack;
+            RegisterItemStack(m_ItemStacks[index],index);
             if (itemStack.IsEmpty && index < NextEmptySlot)
             {
                 NextEmptySlot = index;
@@ -155,11 +151,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
             m_ItemStacks[index].ItemIdentifier = "";
             //m_ItemStacks[index].Amount = 0;
             m_ItemStacks[index].PowerLevel = 0;
+            m_ItemStacks[index].ItemLevel = 0;
             m_ItemStacks[index].ImplicitMods = new ItemStack.ValueMod[0];
             m_ItemStacks[index].ExplicitMods = new ItemStack.ValueMod[0];
             UpdateSlot(index);
             if (index < NextEmptySlot) NextEmptySlot = index;
-            StatsChanged = true;
         }
 
         public bool SwitchItemStacks(int originIndex, Inventory destinationInventory, int destinationIndex)
@@ -186,8 +182,10 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
             }
             else
             {
-                m_ItemStacks[originIndex] = destinationItemStack;
-                destinationInventory.m_ItemStacks[destinationIndex] = originItemStack;
+                SetItemStack(destinationItemStack, originIndex);
+                //m_ItemStacks[originIndex] = destinationItemStack;
+                destinationInventory.SetItemStack(originItemStack, destinationIndex);
+                //destinationInventory.m_ItemStacks[destinationIndex] = originItemStack;
             }
 
             if (originIndex < NextEmptySlot && m_ItemStacks[originIndex].Item == null)
@@ -200,7 +198,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
             }
             UpdateSlot(originIndex);
             destinationInventory.UpdateSlot(destinationIndex);
-            StatsChanged = true;
             return true;
         }
         public void Clear()
@@ -231,7 +228,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                 ItemStack itemStack = m_ItemStacks[i];
                 if (itemStack.Item != null &&
                     itemStack.Item.Identifier.Equals(identifier) &&
-                    itemStack.Amount <= itemStack.Item.MaxStack)
+                    itemStack.Amount < itemStack.Item.MaxStack)
                     return i;
             }
             return -1;
@@ -240,6 +237,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
         {
             int diff = m_ItemStacks.Count - m_Size;
             if (diff == 0) return;
+            UnregisterAllItemStacks();
             if (diff > 0)
             {
                 m_ItemStacks.RemoveRange(m_Size, m_ItemStacks.Count - m_Size);
@@ -252,6 +250,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                     m_ItemStacks.Add(new ItemStack("", 0));
                 }
             }
+            RegisterAllItemStacks();
         }
 
         public void OnValidate()
@@ -272,9 +271,89 @@ namespace AdventuresUnknownSDK.Core.Objects.Inventories
                     UpdateSlot(i);
                 }
             }
-            StatsChanged = true;
+        }
+        private void RegisterAllItemStacks()
+        {
+            for(int i = 0; i < m_Size; i++)
+            {
+                RegisterItemStack(m_ItemStacks[i], i);
+            }
         }
 
+        private void UnregisterAllItemStacks()
+        {
+            for (int i = 0; i < m_Size; i++)
+            {
+                UnregisterItemStack(m_ItemStacks[i], i);
+            }
+        }
+        private void RegisterItemStack(ItemStack itemStack,int slot)
+        {
+            foreach (RegisteredEntity entity in m_RegisteredEntities)
+            {
+                if (entity.AllSlots || entity.Slots.Contains(slot))
+                    itemStack.Register(entity.Entity);
+            }
+        }
+        private void UnregisterItemStack(ItemStack itemStack,int slot)
+        {
+            foreach (RegisteredEntity entity in m_RegisteredEntities)
+            {
+                if (entity.AllSlots || entity.Slots.Contains(slot))
+                    itemStack.Unregister(entity.Entity);
+            }
+        }
+
+        public void Register(Entity entity)
+        {
+            RegisteredEntity re = m_RegisteredEntities.Find((r) => { return r.Entity == entity; });
+           
+            if (re == null)
+            {
+                re = new RegisteredEntity(entity);
+                m_RegisteredEntities.Add(re);
+            }
+            re.AllSlots = true;
+            foreach (ItemStack itemStack in m_ItemStacks)
+            {
+                itemStack.Register(entity);
+            }
+        }
+        public void Unregister(Entity entity)
+        {
+            m_RegisteredEntities.Remove(new RegisteredEntity(entity));
+            foreach (ItemStack itemStack in m_ItemStacks)
+            {
+                itemStack.Unregister(entity);
+            }
+        }
+
+        public void Register(Entity entity, int slot)
+        {
+            RegisteredEntity re = m_RegisteredEntities.Find((r) => { return r.Entity == entity; });
+
+            if (re == null)
+            {
+                re = new RegisteredEntity(entity);
+                m_RegisteredEntities.Add(re);
+            }
+            if (re.Slots.Contains(slot)) return;
+            re.Slots.Add(slot);
+            m_ItemStacks[slot].Register(entity);
+        }
+        public void Unregister(Entity entity, int slot)
+        {
+            RegisteredEntity re = m_RegisteredEntities.Find((r) => { return r.Entity == entity; });
+
+            if (re == null)
+            {
+                re = new RegisteredEntity(entity);
+                m_RegisteredEntities.Add(re);
+            }
+            if (!re.Slots.Contains(slot)) return;
+            re.Slots.Remove(slot);
+            m_ItemStacks[slot].Unregister(entity);
+        }
         #endregion
     }
 }

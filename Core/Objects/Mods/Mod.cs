@@ -15,7 +15,8 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
     {
         [SerializeField] private BasicModBaseIdentifier m_ModBaseIdentifier = null;
         [SerializeField] private int m_Domain = 0;
-        [Range(1,25)]
+        [SerializeField] private string[] m_ModGroups = null;
+        [Range(1, 25)]
         [SerializeField] private int m_Tier = 1;
         [Range(0,100)]
         [SerializeField] private int m_RequiredLevel = 0;
@@ -43,6 +44,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
 
         public WeightedTagList WeightedTagList { get => m_WeightedTagList; set => m_WeightedTagList = value; }
         public int Domain { get => m_Domain; set => m_Domain = value; }
+        public string[] ModGroups { get => m_ModGroups; set => m_ModGroups = value; }
 
         #endregion
 
@@ -76,14 +78,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
 
         public virtual int GetSumOfTags(params string[] tags)
         {
-            int weight = 0;
-
-            foreach(string tag in tags)
-            {
-                weight += m_WeightedTagList.GetWeight(tag);
-            }
-
-            return weight;
+            return m_WeightedTagList.GetWeight(tags);
         }
 
         public virtual ValueMod Roll()
@@ -93,8 +88,10 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             valueMod.Value = MinValue + UnityEngine.Random.Range(0.0f, MaxValue - MinValue);
             if (m_Round != 0.0f)
             {
-                valueMod.Value = (long)(valueMod.Value / m_Round) * m_Round;
+                int count = (int)((m_MaxValue - m_MinValue) / m_Round);
+                valueMod.Value = MinValue + UnityEngine.Random.Range(0,count+1) * m_Round;
             }
+            valueMod.Mod = this;
             return valueMod;
         }
         #endregion

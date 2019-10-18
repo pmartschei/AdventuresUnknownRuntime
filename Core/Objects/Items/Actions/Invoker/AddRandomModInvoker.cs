@@ -3,6 +3,7 @@ using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Objects.Items.Interfaces;
 using AdventuresUnknownSDK.Core.Objects.Mods;
 using AdventuresUnknownSDK.Core.Objects.Tags;
+using AdventuresUnknownSDK.Core.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,9 @@ using static AdventuresUnknownSDK.Core.Objects.Inventories.ItemStack;
 
 namespace AdventuresUnknownSDK.Core.Objects.Items.Actions.Invoker
 {
-    [CreateAssetMenu(menuName = "AdventuresUnknown/Core/Items/Actions/Invoker/AddRandomMod", fileName = "AddRandomModInvoker.asset")]
+    [CreateAssetMenu(menuName = "AdventuresUnknown/Core/Items/Actions/Invoker/AddRandomModInvoker", fileName = "AddRandomModInvoker.asset")]
     public class AddRandomModInvoker : AbstractInvoker
     {
-
 
         #region Properties
 
@@ -25,31 +25,18 @@ namespace AdventuresUnknownSDK.Core.Objects.Items.Actions.Invoker
         #region Methods
         public override void Invoke(ItemStack itemStack)
         {
-            string[] tags = new string[itemStack.Item.Tags.Count];
-            int i = 0;
-            foreach (Tag tag in itemStack.Item.Tags)
+            Mod[] availableMods = ModifierManager.GetModifiersForDomainAndTag(1, itemStack.Item.Tags.ToArray());
+            List<ValueMod> valueMods = new List<ValueMod>();
+            foreach(ValueMod explicitMod in itemStack.ExplicitMods)
             {
-                tags[i] = tag.Identifier;
-                i++;
+                valueMods.Add(explicitMod);
             }
-            Mod[] availableMods = ModifierManager.GetModifiersForDomainAndTag(1, tags);
-            int weight = 0;
-            foreach (Mod availableMod in availableMods)
-            {
-                weight += availableMod.GetSumOfTags(tags);
-            }
-            if (weight == 0) return;
-            int roll = UnityEngine.Random.Range(0, weight);
-            int modIndex = 0;
-            int sumOfTags = availableMods[modIndex].GetSumOfTags(tags);
-            while (roll < sumOfTags)
-            {
-                roll -= sumOfTags;
-                modIndex++;
-                if (modIndex >= availableMods.Length) break;
-                sumOfTags = availableMods[modIndex].GetSumOfTags(tags);
-            }
-            itemStack.ExplicitMods = new ItemStack.ValueMod[] { availableMods[modIndex - 1].Roll() };
+            availableMods = ModUtils.Filter(availableMods, itemStack.ItemLevel);
+            availableMods = ModUtils.Filter(availableMods, valueMods.ToArray());
+            ValueMod valueMod = ModUtils.Roll(availableMods, itemStack.Item.Tags.ToArray());
+            if (valueMod == null) return;
+            valueMods.Add(valueMod);
+            itemStack.ExplicitMods = valueMods.ToArray();
         }
         #endregion
     }

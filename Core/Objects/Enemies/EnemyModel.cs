@@ -16,11 +16,13 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
         [SerializeField] private EnemyActiveGemContainer m_EnemyActiveGemContainer = null;
         [SerializeField] private EntityBehaviour m_EntityBehaviour = null;
         [SerializeField] private EntityController m_EntityController = null;
+        [SerializeField] private BaseEntityStats m_BaseEntityStats = null;
 
         #region Properties
         public EnemyActiveGemContainer EnemyActiveGemContainer { get => m_EnemyActiveGemContainer; set => m_EnemyActiveGemContainer = value; }
         public EntityBehaviour EntityBehaviour { get => m_EntityBehaviour; set => m_EntityBehaviour = value; }
         public EntityController EntityController { get => m_EntityController; set => m_EntityController = value; }
+        public BaseEntityStats BaseEntityStats { get => m_BaseEntityStats; set => m_BaseEntityStats = value; }
         #endregion
 
         #region Methods

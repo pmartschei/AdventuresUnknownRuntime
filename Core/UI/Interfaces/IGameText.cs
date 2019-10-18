@@ -11,6 +11,7 @@ namespace AdventuresUnknownSDK.Core.UI.Interfaces
     {
         #region Methods
         public abstract void SetText(object obj);
+        public abstract void SetColor(Color color);
         #endregion
     }
 }

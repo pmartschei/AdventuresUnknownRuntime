@@ -22,7 +22,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         [SerializeField] private bool m_IsStackable = false;
         [SerializeField] private int m_MaxStack = 1;
         [SerializeField] private int m_Level = 0;
-        [SerializeField] private CurrencyValue m_CurrencyValue = null;
+        [SerializeField] private CurrencyValue m_CurrencyValue;
         [SerializeField] private int m_DefaultAmount = 1;
         [SerializeField] private int m_DefaultPowerLevel = 0;
         [SerializeField] private ItemTypeIdentifier m_ItemTypeIdentifier = null;
@@ -30,6 +30,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         [SerializeField] private AbstractItemStackDisplay m_ItemStackDisplay = null;
         [SerializeField] private TagList m_Tags = new TagList();
         [SerializeField] private string m_FormatterType = "";
+        [SerializeField] private CraftingActionCatalogIdentifier m_CraftingActionCatalog = null;
         
         #region Properties
         public string ItemName { get => m_ItemName.LocalizedString; }
@@ -44,18 +45,20 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         public int DefaultPowerLevel { get => m_DefaultPowerLevel; set => m_DefaultPowerLevel = value; }
         public CurrencyValue CurrencyValue { get => m_CurrencyValue; set => m_CurrencyValue = value; }
         public TagList Tags { get => m_Tags; set => m_Tags = value; }
+        public CraftingActionCatalogIdentifier CraftingActionCatalog { get => m_CraftingActionCatalog; set => m_CraftingActionCatalog = value; }
         #endregion
 
         #region Methods
 
         public override bool ConsistencyCheck()
         {
-            base.ConsistencyCheck();
-            bool v = m_ItemTypeIdentifier.ConsistencyCheck();
-            if (!v) return v;
-            v = Tags.ConsistencyCheck();
-            if (!v) return v;
-            return m_CurrencyValue.Currency.ConsistencyCheck();
+            if (!base.ConsistencyCheck()) return false;
+            if (!m_ItemTypeIdentifier.ConsistencyCheck()) return false;
+            m_CraftingActionCatalog.ConsistencyCheck();
+            if (!Tags.ConsistencyCheck()) return false;
+            if (!m_CurrencyValue.Currency.ConsistencyCheck()) return false;
+
+            return true;
         }
 
         public override void ForceUpdate()
@@ -70,11 +73,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         }
         public virtual string[] GetImplicitTexts(ItemStack itemStack)
         {
-            return GetValueModsTexts(itemStack.ImplicitMods);
+            return GetValueModsTexts(itemStack.ImplicitMods, m_FormatterType);
         }
         public virtual string[] GetExplicitTexts(ItemStack itemStack)
         {
-            return GetValueModsTexts(itemStack.ExplicitMods);
+            return GetValueModsTexts(itemStack.ExplicitMods,m_FormatterType);
         }
         public virtual Stat[] GetStats(ItemStack itemStack)
         {
@@ -92,7 +95,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
             return CreateItem(m_DefaultAmount);
         }
 
-        public string[] GetValueModsTexts(ItemStack.ValueMod[] valueMods)
+        protected string[] GetValueModsTexts(ItemStack.ValueMod[] valueMods,string formatter)
         {
             List<string> implicitTexts = new List<string>();
 
@@ -103,10 +106,27 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
                     implicitTexts.Add("Missing: " + valueMod.Identifier);
                     continue;
                 }
-                implicitTexts.Add(valueMod.BasicModBase.ToText(m_FormatterType, valueMod.Value));
+                string text = valueMod.BasicModBase.ToText(formatter, valueMod.Value);
+                if (!text.Equals(string.Empty))
+                {
+                    implicitTexts.Add(text);
+                }
             }
 
             return implicitTexts.ToArray();
+        }
+        public virtual bool IsModifiable()
+        {
+            return true;
+        }
+
+        public virtual bool RegisterImplicitModifiers()
+        {
+            return true;
+        }
+        public virtual bool RegisterExplicitModifiers()
+        {
+            return true;
         }
         #endregion
     }

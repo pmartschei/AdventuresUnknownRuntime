@@ -24,7 +24,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.HitActions
             if (hitContext == null) return;
             if (hitContext.IsProtected) return;
             hitContext.Target.Entity.GetStat(m_Life.Identifier).Current -= activeStats.GetStat(m_Source.Identifier).Calculated;
-            Debug.LogFormat("{0} took {1} from {2}", hitContext.Target, activeStats.GetStat(m_Source.Identifier).Calculated, m_Source.Identifier);
         }
         #endregion
     }

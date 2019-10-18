@@ -12,7 +12,8 @@ using UnityEngine;
 
 namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CooldownActions
 {
-    public class CheckIfAction : BaseAction
+    [CreateAssetMenu(menuName = "AdventuresUnknown/Core/Mods/Actions/AttackCooldownApply/CheckCooldownAction", fileName = "CheckCooldownAction.asset")]
+    public class CheckCooldownAction : AttackCooldownGenerationAction
     {
         [SerializeField] private ModTypeIdentifier m_Source = null;
         [SerializeField] private CheckType m_CheckType = CheckType.Lower;
@@ -20,7 +21,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CooldownActions
 
 
         #region Properties
-        public override ActionType ActionType { get => ActionTypeManager.AttackCooldownGeneration; }
         #endregion
         #region Methods
 
@@ -29,6 +29,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CooldownActions
         {
             CooldownContext cooldownContext = actionContext as CooldownContext;
             if (cooldownContext == null) return;
+            if (!cooldownContext.CanUse) return;
             Stat source = cooldownContext.Entity.GetStat(m_Source.Identifier);
             Stat target = activeStats.GetStat(m_Value.Identifier);
 

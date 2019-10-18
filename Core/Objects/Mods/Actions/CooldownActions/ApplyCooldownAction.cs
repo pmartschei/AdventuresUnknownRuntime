@@ -13,7 +13,7 @@ using UnityEngine;
 namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CooldownActions
 {
     [CreateAssetMenu(menuName = "AdventuresUnknown/Core/Mods/Actions/AttackCooldownApply/ApplyCooldownAction", fileName = "ApplyCooldownAction.asset")]
-    public class ApplyCooldownAction : BaseAction
+    public class ApplyCooldownAction : AttackCooldownApplyAction
     {
         [SerializeField] private ModTypeIdentifier m_Source = null;
         [SerializeField] private ModTypeIdentifier m_Value = null;

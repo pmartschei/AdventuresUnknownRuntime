@@ -42,6 +42,22 @@ namespace AdventuresUnknownSDK.Core.Entities
             if (m_Callback != null)
                 m_Callback.Invoke(activeStats);
         }
+
+        public class CompareSource : IEqualityComparer<TimerObject>
+        {
+            public bool Equals(TimerObject x, TimerObject y)
+            {
+                if (x == null && y == null) return true;
+                if (x == null || y == null) return false;
+                return x.Source.Equals(y.Source);
+            }
+
+            public int GetHashCode(TimerObject obj)
+            {
+                if (obj.Source == null) return 0;
+                return obj.Source.GetHashCode();
+            }
+        }
         #endregion
     }
 }

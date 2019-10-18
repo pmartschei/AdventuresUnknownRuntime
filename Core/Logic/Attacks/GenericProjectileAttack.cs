@@ -1,5 +1,6 @@
 ﻿using AdventuresUnknownSDK.Core.Entities;
 using AdventuresUnknownSDK.Core.Entities.Controllers;
+using AdventuresUnknownSDK.Core.Objects.Mods.Actions.ActionObjects;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,39 +18,40 @@ namespace AdventuresUnknownSDK.Core.Logic.Attacks
         #endregion
 
         #region Methods
-        protected override void AttackUpdate()
+
+        protected override void AttackFixedUpdate()
         {
             Move();
+            Stat speed = Entity.GetStat("core.modtypes.skills.projectilespeed");
+            //Stat despawnOnDestination = Entity.GetStat("core.modtypes.skills.projectiledespawndestination");
+            //if (despawnOnDestination.Calculated >= 1.0f && this.transform.position == OriginalDestination)
+            //{
+            //    DestroyAttack();
+            //    return;
+            //}
+            if (Rigidbody.velocity.magnitude > speed.Calculated + StartVelocity)
+            {
+                Rigidbody.velocity = Rigidbody.velocity.normalized * (speed.Calculated + StartVelocity);
+            }
+            speed.Current = Rigidbody.velocity.magnitude;
+            Origin = this.Head.position;
+            Destination = Direction * speed.Calculated + Origin;
         }
         protected virtual void Move()
         {
             Stat speed = Entity.GetStat("core.modtypes.skills.projectilespeed");
-
-            //RaycastHit[] hits;
-
-            //hits = Physics.RaycastAll(lastPosition, Direction, Vector3.Distance(lastPosition, newPosition), ~(0x1 << this.gameObject.layer));
-            //foreach (RaycastHit hit in hits)
-            //{
-            //    CollideWith(hit.collider);
-            //}
-            Rigidbody.AddForce(Direction.normalized * speed.Calculated - Rigidbody.velocity,ForceMode.VelocityChange);
-            //this.transform.position = newPosition;
+            Rigidbody.AddForce(Direction.normalized * (speed.Calculated + StartVelocity) - Rigidbody.velocity, ForceMode.VelocityChange);
         }
 
-        private void FixedUpdate()
+        protected override void OnAttackHit(HitContext hitContext)
         {
-            Stat speed = Entity.GetStat("core.modtypes.skills.projectilespeed");
-            Stat despawnOnDestination = Entity.GetStat("core.modtypes.skills.projectiledespawndestination");
-            if (despawnOnDestination.Calculated >= 1.0f && this.transform.position == Destination)
+            base.OnAttackHit(hitContext);
+            Stat pierce = Entity.GetStat("core.modtypes.skills.pierce");
+            pierce.Current--;
+            if (pierce.Current < 0.0f)
             {
                 DestroyAttack();
-                return;
             }
-            if (Rigidbody.velocity.magnitude > speed.Calculated)
-            {
-                Rigidbody.velocity = Rigidbody.velocity.normalized * speed.Calculated;
-            }
-            speed.Current = Rigidbody.velocity.magnitude;
         }
 
         public static Vector3[] GenerateCircularPositions(Vector3 direction, Vector3 origin, int projectileCount,float startingAngle,float angle)
@@ -65,10 +67,10 @@ namespace AdventuresUnknownSDK.Core.Logic.Attacks
                 positions[0] = direction + origin;
                 return positions;
             }
-            float anglePerProjectile = angle / (float)(projectileCount-1);
+            float anglePerProjectile = angle / (float)(projectileCount);
             for(int i = 0; i < positions.Length; i++)
             {
-                positions[i] = (Quaternion.Euler(new Vector3(0, 0, anglePerProjectile * i + startingAngle)) * direction) + origin;
+                positions[i] = (Quaternion.Euler(new Vector3(0, anglePerProjectile * i + startingAngle, 0 )) * direction) + origin;
 
             }
             return positions;
@@ -81,7 +83,7 @@ namespace AdventuresUnknownSDK.Core.Logic.Attacks
             for (int i = 0; i < positions.Length; i++)
             {
                 float randomAngle = UnityEngine.Random.Range(0, maxAngle);
-                positions[i] = (Quaternion.Euler(new Vector3(0, 0, randomAngle + startingAngle)) * direction) + origin;
+                positions[i] = (Quaternion.Euler(new Vector3(0, randomAngle + startingAngle,0)) * direction) + origin;
             }
             return positions;
         }
@@ -91,7 +93,7 @@ namespace AdventuresUnknownSDK.Core.Logic.Attacks
 
             Vector3[] positions = new Vector3[projectileCount];
 
-            Vector3 line = Vector3.Cross((destination-origin).normalized, new Vector3(0, 0, targetLength / (float)projectileCount));
+            Vector3 line = Vector3.Cross((destination-origin).normalized, new Vector3(0, targetLength / (float)projectileCount,0));
             float start = -(projectileCount - 1) / 2.0f;
             for (int i = 0; i < positions.Length; i++)
             {
@@ -106,6 +108,15 @@ namespace AdventuresUnknownSDK.Core.Logic.Attacks
             }
 
             return positions;
+        }
+        public override float GetMaxSkillDistance(Entity stats)
+        {
+            Stat projectileSpeed = stats.GetStat("core.modtypes.skills.projectilespeed");
+            Stat duration = stats.GetStat("core.modtypes.skills.duration");
+
+            float travelDistance = duration.Calculated * projectileSpeed.Calculated;
+
+            return base.GetMaxSkillDistance(stats) + travelDistance;
         }
         #endregion
     }

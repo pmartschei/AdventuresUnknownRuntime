@@ -50,10 +50,16 @@ namespace AdventuresUnknownSDK.Core.Managers
             return Instance.SpawnEnemyImpl(enemy, pos);
         }
 
+        public static Level GenerateFromCompletedLevel(CompletedLevel level)
+        {
+            return Instance.GenerateFromCompletedLevelImpl(level);
+        }
+
         protected abstract void SetLevelGeneratorImpl(LevelGeneratorDescription levelGeneratorDescription);
         protected abstract void SuccessImpl();
         protected abstract void FailImpl();
         protected abstract EnemyModel SpawnEnemyImpl(Enemy enemy, Vector3 pos);
+        protected abstract Level GenerateFromCompletedLevelImpl(CompletedLevel level);
         #endregion
     }
 }

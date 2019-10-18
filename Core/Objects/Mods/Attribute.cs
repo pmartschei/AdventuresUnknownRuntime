@@ -14,13 +14,13 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
     public class Attribute
     {
         [HideInInspector] [SerializeField] private string m_InspectorElementName = "Element";
-        [SerializeField] private BasicModBaseIdentifier m_ModBaseIdentifier = null;
+        [SerializeField] private BasicModBaseIdentifier m_ModBaseIdentifier = new BasicModBaseIdentifier();
         [SerializeField] private float m_Value = 0;
         [SerializeField] private bool m_IsCurve = false;
-        [SerializeField] private AnimationCurve m_ValueCurve = null;
+        [SerializeField] private AnimationCurve m_ValueCurve = new AnimationCurve();
 
         #region Properties
-        public string ModBaseIdentifier { get => m_ModBaseIdentifier.Identifier; }
+        public string ModBaseIdentifier { get => m_ModBaseIdentifier.Identifier;}
         public BasicModBase ModBase { get => m_ModBaseIdentifier.Object; }
         #endregion
 
@@ -47,6 +47,32 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             {
                 m_InspectorElementName = "EMPTY STRING";
             }
+        }
+
+        public Attribute Clone()
+        {
+            Attribute copy = new Attribute();
+            copy.m_ModBaseIdentifier.Identifier = this.ModBaseIdentifier;
+            copy.m_Value = this.m_Value;
+            Keyframe[] keyFrames = new Keyframe[m_ValueCurve.length];
+            Keyframe[] originFrames = m_ValueCurve.keys;
+            for(int i=0;i < keyFrames.Length;i++)
+            {
+                Keyframe keyframe = new Keyframe();
+
+                keyframe.time = originFrames[i].time;
+                keyframe.value = originFrames[i].value;
+                keyframe.inTangent = originFrames[i].inTangent;
+                keyframe.outTangent = originFrames[i].outTangent;
+                keyframe.tangentMode = originFrames[i].tangentMode;
+                keyframe.inWeight = originFrames[i].inWeight;
+                keyframe.outWeight = originFrames[i].outWeight;
+                keyframe.weightedMode = originFrames[i].weightedMode;
+
+                keyFrames[i] = keyframe;
+            }
+            copy.m_ValueCurve.keys = keyFrames;
+            return copy;
         }
         #endregion
     }

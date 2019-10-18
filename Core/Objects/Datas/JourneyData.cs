@@ -16,15 +16,19 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
 
         [SerializeField] private int m_Seed = 0;
         [SerializeField] private int m_Difficulty = 0;
+        [SerializeField] private List<CompletedLevel> m_CompletedLevels = new List<CompletedLevel>();
         [NonSerialized] private List<Level> m_NextLevels = new List<Level>();
 
         [NonSerialized] private UnityEvent m_NextLevelChangeEvent = new UnityEvent();
+        [NonSerialized] private CompletedLevelEvent m_CompletedLevelAddEvent = new CompletedLevelEvent();
 
         #region Properties
         public int Seed { get => m_Seed; set => m_Seed = value; }
         public Level[] NextLevels { get => m_NextLevels.ToArray(); }
         public UnityEvent OnNextLevelChange { get => m_NextLevelChangeEvent; set => m_NextLevelChangeEvent = value; }
+        public CompletedLevelEvent OnCompletedLevelAdd { get => m_CompletedLevelAddEvent; set => m_CompletedLevelAddEvent = value; }
         public int Difficulty { get => m_Difficulty; set => m_Difficulty = value; }
+        public List<CompletedLevel> CompletedLevels { get => m_CompletedLevels; set => m_CompletedLevels = value; }
         #endregion
 
         #region Methods
@@ -34,7 +38,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
             if (!journeyData) return;
             journeyData.Seed = m_Seed;
             journeyData.Difficulty = m_Difficulty;
-            GenerateNextLevels();
+            journeyData.CompletedLevels = m_CompletedLevels;
         }
 
         public void GenerateNextLevels()
@@ -52,10 +56,22 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
                 OnNextLevelChange.Invoke();
         }
 
+        public void AddCompletedLevel(Level level)
+        {
+            CompletedLevel completedLevel = new CompletedLevel();
+            completedLevel.Seed = level.Seed;
+            completedLevel.Difficulty = level.Difficulty;
+            completedLevel.EnemyLevel = level.EnemyLevel;
+            m_CompletedLevels.Add(completedLevel);
+            if (OnCompletedLevelAdd != null)
+                OnCompletedLevelAdd.Invoke(completedLevel);
+        }
+
         public override void Reset()
         {
             m_Difficulty = 0;
             m_Seed = 0;
+            m_CompletedLevels.Clear();
         }
         #endregion
     }

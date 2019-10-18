@@ -1,4 +1,6 @@
 ﻿using AdventuresUnknownSDK.Core.Entities;
+using AdventuresUnknownSDK.Core.Entities.Controllers;
+using AdventuresUnknownSDK.Core.Entities.Weapons;
 using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Objects.Items;
@@ -45,7 +47,7 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
         }
 
         public abstract Entity CalculateEntity(int index);
-        public abstract void Spawn(int index,Vector3 origin,Vector3 destination);
+        public abstract void Spawn(EntityController origin,int index,params Muzzle[] muzzles);
         #endregion
     }
 }

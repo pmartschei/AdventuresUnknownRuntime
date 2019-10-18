@@ -18,10 +18,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
         [SerializeField] private LocalizationString m_EnemyName = null;
         [SerializeField] private TagList m_TagList = null;
         [SerializeField] private Attribute[] m_Attributes = null;
+        [SerializeField] private bool m_IsSpawnable = true;
         [Range(1, 10)]
         [SerializeField] private int m_Difficulty = 1;
         [SerializeField] private EnemyModel m_Model = null;
-        [SerializeField] private AttackPattern m_AttackPattern = null;
+        [SerializeField] private ActiveGemCollection m_ActiveGemCollection = null;
         
         //attack list for enemy
 
@@ -29,9 +30,10 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
         public string EnemyName { get => m_EnemyName.LocalizedString; }
         public EnemyModel Model { get => m_Model; set => m_Model = value; }
         public Attribute[] Attributes { get => m_Attributes; set => m_Attributes = value; }
-        public AttackPattern AttackPattern { get => m_AttackPattern; set => m_AttackPattern = value; }
+        public ActiveGemCollection ActiveGemCollection { get => m_ActiveGemCollection; set => m_ActiveGemCollection = value; }
         public TagList TagList { get => m_TagList; set => m_TagList = value; }
         public int Difficulty { get => m_Difficulty; set => m_Difficulty = value; }
+        public bool IsSpawnable { get => m_IsSpawnable; set => m_IsSpawnable = value; }
 
         #endregion
 

@@ -24,12 +24,15 @@ namespace AdventuresUnknownSDK.Core.Managers
         public static UnityEvent OnWalletDisplayChange => Instance.OnWalletDisplayChangeImpl;
         public static Currency[] WalletDisplay => Instance.WalletDisplayImpl;
 
+        public static int Level => Instance.LevelImpl;
+
         protected abstract string FileExtensionImpl { get; }
         protected abstract EntityBehaviour SpaceShipImpl { get; }
         protected abstract EntityController PlayerControllerImpl { get; set; }
         protected abstract Wallet PlayerWalletImpl { get; }
         protected abstract UnityEvent OnWalletDisplayChangeImpl { get; }
         protected abstract Currency[] WalletDisplayImpl { get; }
+        protected abstract int LevelImpl { get; }
         #endregion
 
         #region Methods

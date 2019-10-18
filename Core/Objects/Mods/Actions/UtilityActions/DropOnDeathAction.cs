@@ -27,6 +27,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.UtilityActions
 
         public override void Notify(Entity activeStats, ActionContext actionContext)
         {
+            if (activeStats.GetStat(ModType.Identifier).Calculated == 0.0f) return;
             DropRate[] dropRates = DropManager.GetDropRates(activeStats.Description.Enemy);
 
             List<ItemStack> rolledItemStacks = new List<ItemStack>();
@@ -34,12 +35,14 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.UtilityActions
             foreach(DropRate dropRate in dropRates)
             {
                 //TODO maxlevel from enemy? and rate multiplier = magic find
-                rolledItemStacks.AddRange(dropRate.Roll(50, 1.0f));
+                rolledItemStacks.AddRange(dropRate.Roll((int)activeStats.GetStat("core.modtypes.ship.level").Calculated,
+                    1.0f + PlayerManager.PlayerController.Entity.GetStat("core.modtypes.utility.magicfind").Calculated));
             }
 
             foreach(ItemStack rolledItemStack in rolledItemStacks)
             {
-                DropManager.GenerateDrop(rolledItemStack, activeStats.GameObject.transform.position);
+                ModifierManager.ModifyItemStack(rolledItemStack);
+                DropManager.GenerateDrop(rolledItemStack, activeStats.EntityBehaviour.transform.position);
             }
         }
     }

@@ -18,11 +18,11 @@ namespace AdventuresUnknownSDK.Core.Managers
         #endregion
 
         #region Methods
-        public static List<BaseAction> GetActions(ActionType actionType,params ModType[] modTypes)
+        public static List<BaseAction> GetActions(ActionType actionType, params ModType[] modTypes)
         {
             return Instance.GetActionsImpl(actionType,modTypes);
         }
-        public static List<BaseAction> GetActions(int actionValue, params ModType[] modTypes)
+        public static List<BaseAction> GetActions(int actionValue,params ModType[] modTypes)
         {
             return Instance.GetActionsImpl(actionValue, modTypes);
         }

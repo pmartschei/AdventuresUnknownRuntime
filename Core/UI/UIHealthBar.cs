@@ -29,20 +29,9 @@ public class UIHealthBar : MonoBehaviour
             if (m_Scale != this.transform.root.transform.lossyScale)
             {
                 m_Scale = this.transform.root.transform.lossyScale;
-                m_InvertedScale = new Vector3(1.0f / m_Scale.x, 1.0f / m_Scale.y, 1.0f / m_Scale.x);
+                m_InvertedScale = new Vector3(1.0f / m_Scale.x, 1.0f / m_Scale.y, 1.0f / m_Scale.z);
             }
             return m_InvertedScale;
-        }
-    }
-    public Vector3 Scale {
-        get
-        {
-            if (m_Scale != this.transform.root.transform.lossyScale)
-            {
-                m_Scale = this.transform.root.transform.lossyScale;
-                m_InvertedScale = new Vector3(1.0f / m_Scale.x, 1.0f / m_Scale.y, 1.0f / m_Scale.x);
-            }
-            return m_Scale;
         }
     }
     #endregion
@@ -54,19 +43,20 @@ public class UIHealthBar : MonoBehaviour
     }
     void LateUpdate()
     {
-        if (!m_EntityController)
+        if (!EntityController)
         {
             Destroy(this.gameObject);
             return;
         }
         if (m_CanvasGroup)
             m_CanvasGroup.alpha = 1.0f;
-        Vector3 position = m_EntityController.transform.position;
+        Vector3 position = EntityController.Head.position;
         position += m_Offset;
-        position.x *= InvertedScale.x;
-        position.y *= InvertedScale.y;
-        position.z = 0.0f;
-        this.transform.localPosition = position;
+        Vector3 viewPortPosition = Camera.main.WorldToViewportPoint(position);
+        viewPortPosition = new Vector3(
+            (viewPortPosition.x-0.5f) * this.transform.root.GetComponent<RectTransform>().sizeDelta.x,
+            (viewPortPosition.y-0.5f) * this.transform.root.GetComponent<RectTransform>().sizeDelta.y);
+        this.transform.localPosition = viewPortPosition;
         if (m_Slider)
         {
             Stat stat = EntityController.SpaceShip.Entity.GetStat(m_ModType.Identifier);

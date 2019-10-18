@@ -84,6 +84,12 @@ namespace AdventuresUnknownSDK.Core.UI
             if (m_CurrencyImage)
                 m_CurrencyImage.sprite = m_CurrentCurrency.Icon;
         }
+
+        public override void SetColor(Color color)
+        {
+            if (!m_Text) return;
+            m_Text.color = color;
+        }
         #endregion
     }
 }

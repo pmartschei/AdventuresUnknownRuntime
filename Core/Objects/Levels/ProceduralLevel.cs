@@ -8,12 +8,12 @@ using Attribute = AdventuresUnknownSDK.Core.Objects.Mods.Attribute;
 using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Enemies;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace AdventuresUnknownSDK.Core.Objects.Levels
 {
     public class ProceduralLevel : Level
     {
-
         [SerializeField] private int m_MaximumSpawnCredits = 0;
         [SerializeField] private int m_MinimumSpawnCredits = 0;
 
@@ -22,6 +22,8 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
 
         private List<EnemyModel> m_AliveEnemies = new List<EnemyModel>();
         private Wave m_NextWave = null;
+
+        private bool m_IsSpawning = false;
 
         public class Wave{
             public int Index;
@@ -55,6 +57,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
             set => m_NextWave = value; }
         public int CurrentWave { get => m_CurrentWave; set => m_CurrentWave = value; }
         public float CurrentWaveTimer { get => m_CurrentWaveTimer; set => m_CurrentWaveTimer = value; }
+        public int RemainingEnemies { get => m_AliveEnemies.Count;}
         #endregion
 
         #region Methods
@@ -66,17 +69,17 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
         public override void Update()
         {
             if (LevelManager.IsPaused) return;
+            for (int i = 0; i < m_AliveEnemies.Count; i++)
+            {
+                if (m_AliveEnemies[i].EntityBehaviour == null || m_AliveEnemies[i].EntityBehaviour.Entity.IsDead)
+                {
+                    m_AliveEnemies.RemoveAt(i);
+                    i--;
+                }
+            }
             if (NextWave == null)
             {
-                for(int i = 0; i < m_AliveEnemies.Count; i++)
-                {
-                    if (m_AliveEnemies[i].EntityBehaviour == null || m_AliveEnemies[i].EntityBehaviour.Entity.IsDead)
-                    {
-                        m_AliveEnemies.RemoveAt(i);
-                        i--;
-                    }
-                }
-                if (m_AliveEnemies.Count == 0)
+                if (RemainingEnemies == 0 && !m_IsSpawning)
                 {
                     LevelManager.IsPaused = true;
                     LevelManager.Success();
@@ -84,11 +87,19 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
             }
             else
             {
-                m_CurrentWaveTimer -= Time.deltaTime;
+                if (RemainingEnemies == 0 && m_CurrentWaveTimer > 3.0f)
+                {
+                    m_CurrentWaveTimer = 3.0f;
+                }
+                else
+                {
+                    m_CurrentWaveTimer -= Time.deltaTime;
+                }
                 if (m_CurrentWaveTimer <= 0.0f)
                 {
                     m_CurrentWaveTimer = TimeBetweenWaves;
-                    SpawnWave(NextWave);
+                    m_IsSpawning = true;
+                    LevelManager.Instance.StartCoroutine(SpawnWave(NextWave));
                     m_CurrentWave++;
                 }
             }
@@ -109,33 +120,62 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
 
             int enemyRoll = Random.Range(0, PossibleEnemies.Length);
 
-            int spawnCredits = Random.Range(MinimumSpawnCredits, MaximumSpawnCredits);
-            int enemyCount = 10;
+            float spawnCredits = Random.Range(MinimumSpawnCredits, MaximumSpawnCredits);
+            float enemyCount = 10;
             if (PossibleEnemies[enemyRoll].Difficulty != 0)
             {
-                enemyCount = spawnCredits / PossibleEnemies[enemyRoll].Difficulty;
+                enemyCount = spawnCredits / (float)PossibleEnemies[enemyRoll].Difficulty;
+                enemyCount = Mathf.Max(enemyCount, 1);
             }
 
             Wave wave = new Wave();
             wave.Enemy = PossibleEnemies[enemyRoll];
-            wave.Count = enemyCount;
+            wave.Count = Mathf.RoundToInt(enemyCount);
             wave.Index = waveIndex;
             m_NextWave = wave;
         }
 
-        private void SpawnWave(Wave wave)
+        private IEnumerator SpawnWave(Wave wave)
         {
             Vector2 centerPosition = Random.insideUnitCircle * new Vector2(Width * 0.5f,Height * 0.5f);
             float roll = Random.Range(0.05f + wave.Enemy.Difficulty * 0.010f, 0.15f + wave.Enemy.Difficulty * 0.05f);
             Vector2 spawnSize = new Vector2(Width * roll, Height * roll);
+            float spawnDelay = 0.0f;
+            if (wave.Count > 0)
+                spawnDelay = 1 / wave.Count;
             for (int i = 0; i < wave.Count; i++)
             {
                 Vector2 spawnPosition = centerPosition + Random.insideUnitCircle * spawnSize;
-                EnemyModel em = LevelManager.SpawnEnemy(wave.Enemy, spawnPosition);
+                EnemyModel em = LevelManager.SpawnEnemy(wave.Enemy, new Vector3(spawnPosition.x, 0.0f,spawnPosition.y));
+                em.EntityBehaviour.Entity.GetStat("core.modtypes.utility.level").AddStatModifier(new Entities.StatModifier(EnemyLevel, CalculationType.Flat, this));
                 m_AliveEnemies.Add(em);
+                yield return new WaitForSeconds(spawnDelay);
             }
+            m_IsSpawning = false;
+            yield break;
         }
 
+        public override void Build(Transform parent)
+        {
+            GameObject southWall = GameObject.Instantiate(LevelObjectManager.Wall, parent);
+            GameObject northWall = GameObject.Instantiate(LevelObjectManager.Wall, parent);
+            GameObject westWall = GameObject.Instantiate(LevelObjectManager.Wall, parent);
+            GameObject eastWall = GameObject.Instantiate(LevelObjectManager.Wall, parent);
+            southWall.name = "SouthWall";
+            northWall.name = "NorthWall";
+            westWall.name = "WestWall";
+            eastWall.name = "EastWall";
+            float extHeight = Height + 1;
+            float extWidth = Width + 1;
+            southWall.transform.position = new Vector3(0, 0, -extWidth / 2);
+            northWall.transform.position = new Vector3(0, 0, extWidth / 2);
+            westWall.transform.position = new Vector3(-extHeight / 2, 0,0);
+            eastWall.transform.position = new Vector3(extHeight / 2, 0,0);
+            southWall.transform.localScale = new Vector3(extHeight, 1, 0.05f);
+            northWall.transform.localScale = new Vector3(extHeight, 1, 0.05f);
+            westWall.transform.localScale = new Vector3(0.05f, 1, extWidth);
+            eastWall.transform.localScale = new Vector3(0.05f, 1, extWidth);
+        }
         #endregion
     }
 }

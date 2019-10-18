@@ -11,9 +11,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         [SerializeField] private int m_Priority = 0;
         [SerializeField] private bool m_RoundDown = false;
         [SerializeField] private bool m_AlwaysTakeMax = false;
+        [SerializeField] private bool m_CanGetHigherThanCalculated = false;
         [SerializeField] private float m_MinValue = float.MinValue;
         [SerializeField] private float m_MaxValue = float.MaxValue;
 
+        [SerializeField] private bool m_IsVisible = true;
         [SerializeField] private Color m_Color = Color.white;
         [SerializeField] private ModTypeFormatter[] m_ModTypeFormatters = null;
 
@@ -48,6 +50,8 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         public float MinValue { get => m_MinValue; set => m_MinValue = value; }
         public float MaxValue { get => m_MaxValue; set => m_MaxValue = value; }
         public ModActionCollection ModActionCollection { get => m_ModActionCollection; set => m_ModActionCollection = value; }
+        public bool CanGetHigherThanCalculated { get => m_CanGetHigherThanCalculated; set => m_CanGetHigherThanCalculated = value; }
+        public bool IsVisible { get => m_IsVisible; set => m_IsVisible = value; }
         #endregion
 
 
@@ -55,6 +59,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         public virtual string ToText(string formatterIdentifier, float value,CalculationType calculationType)
         {
             ModTypeFormatter modTypeFormatter = FindFirstFormatter(formatterIdentifier);
+            if (!IsVisible) return string.Empty;
             return modTypeFormatter.ToText(value, this, calculationType, HTMLColor);
         }
 
@@ -79,7 +84,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
                 foundFormatter = ModTypeFormatter.DefaultFormatter; //take the default formatter
             return foundFormatter;
         }
-        public void OnValidate()
+        public virtual void OnValidate()
         {
             HTMLColor = ColorUtility.ToHtmlStringRGBA(m_Color);
         }

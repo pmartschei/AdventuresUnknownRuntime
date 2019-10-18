@@ -1,7 +1,9 @@
-﻿using AdventuresUnknownSDK.Core.Managers;
+﻿using AdventuresUnknownSDK.Core.Entities;
+using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.GameModes;
 using AdventuresUnknownSDK.Core.Utils.Events;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using UnityEngine;
 using UnityEngine.Events;
@@ -12,7 +14,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
     public class ContextData : IPlayerData
     {
         [SerializeField] private string m_ShipName = "";
-        [SerializeField] private int m_Level = 0;
+        [SerializeField] private int m_Level = 1;
         [SerializeField] private int m_Experience = 0;
         [SerializeField] private float m_PlayTime = 0;
         [SerializeField] private string m_GameMode = "";
@@ -49,8 +51,18 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
             {
                 if (m_Experience != value)
                 {
-                    m_Experience = value;
-                    m_OnExperienceChange.Invoke(m_Experience);
+                    if (m_Level < ExperienceManager.MaxLevel)
+                    {
+                        m_Experience = value;
+                        int requiredExperience = ExperienceManager.GetExperienceForLevel(m_Level + 1);
+                        while (m_Experience >= requiredExperience)
+                        {
+                            Level++;
+                            m_Experience -= requiredExperience;
+                            requiredExperience = ExperienceManager.GetExperienceForLevel(m_Level + 1);
+                        }
+                        m_OnExperienceChange.Invoke(m_Experience);
+                    }
                 }
             }
         }
@@ -93,6 +105,13 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
             contextData.PlayTime = this.PlayTime;
             contextData.GameMode = this.GameMode;
             contextData.SaveFileName = this.SaveFileName;
+        }
+
+        private void OnValidate()
+        { 
+            m_OnExperienceChange.Invoke(m_Experience);
+            m_OnLevelChange.Invoke(m_Level);
+            m_OnPlayTimeChange.Invoke(m_PlayTime);
         }
         #endregion
     }

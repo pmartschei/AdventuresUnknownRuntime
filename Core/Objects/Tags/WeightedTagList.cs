@@ -43,6 +43,19 @@ namespace AdventuresUnknownSDK.Core.Objects.Tags
             return 0;
         }
 
+        public int GetWeight(params string[] tagIdentifiers)
+        {
+            if (tagIdentifiers == null) return -1;
+            foreach(WeightedTag wt in m_WeightedTags)
+            {
+                if (tagIdentifiers.Contains(wt.Tag.Identifier))
+                {
+                    return wt.Weight;
+                }
+            }
+            return -1;
+        }
+
         public void Add(WeightedTag item)
         {
             m_WeightedTags.Add(item);

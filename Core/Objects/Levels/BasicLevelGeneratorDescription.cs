@@ -3,6 +3,7 @@ using AdventuresUnknownSDK.Core.Objects.Enemies;
 using AdventuresUnknownSDK.Core.Objects.Mods;
 using AdventuresUnknownSDK.Core.Objects.Tags;
 using AdventuresUnknownSDK.Core.UI.Items;
+using AdventuresUnknownSDK.Core.Utils;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,9 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
         [SerializeField] private float m_ChanceToPickAttributeFromTag = 0.85f;
         [SerializeField] private TagIdentifier m_DefaultTag = null;
         [SerializeField] private List<TagSpawnWeight> m_TagSpawnWeights = new List<TagSpawnWeight>();
+        [SerializeField] private string[] m_LevelNames = null;
+        [SerializeField] private string[] m_LevelPrefixes = null;
+        [SerializeField] private string[] m_LevelSuffixes = null;
 
 
         [Serializable]
@@ -72,6 +76,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
             {
                 tsw.TagIdentifier.ConsistencyCheck();
             }
+            m_DefaultTag.ConsistencyCheck();
             return true;
         }
         public override void Init(ProceduralLevel level)
@@ -112,24 +117,12 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
                     rollableMods = ModifierManager.GetModifiersForDomain(2);
                     tag = m_DefaultTag.Identifier;
                 }
+
                 if (rollableMods == null) continue;
-                int weights = 0;
-                foreach(Mod mod in rollableMods)
-                {
-                    weights += mod.GetSumOfTags(tag);
-                }
-                if (weights == 0) continue;
-                int weightRoll = Random.Range(0, weights);
-                //two times getsumoftags is not optimal
-                int modIndex = 0;
-                int sumOfTags = rollableMods[modIndex].GetSumOfTags(tag);
-                while (weightRoll > sumOfTags)
-                {
-                    weightRoll -= sumOfTags;
-                    modIndex++;
-                    sumOfTags = rollableMods[modIndex].GetSumOfTags(tag);
-                }
-                attributes.Add(rollableMods[modIndex].Roll());
+                ValueMod valueMod = ModUtils.Roll(rollableMods.ToArray(), tag);
+                if (valueMod == null) continue;
+                attributes.Add(valueMod);
+
             }
 
             level.Attributes = attributes.ToArray();
@@ -137,7 +130,20 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
 
         public override void GenerateName(ProceduralLevel level)
         {
-            
+            int roll = Random.Range(0, m_LevelNames.Length);
+
+            level.LevelName.LocalizedIdentifier = m_LevelNames[roll];
+
+            if (m_LevelPrefixes.Length > 0 )//&& Random.Range(0,1.0f) >= 0.5f)
+            {
+                roll = Random.Range(0, m_LevelPrefixes.Length);
+                level.LevelPrefix.LocalizedIdentifier = m_LevelPrefixes[roll];
+            }
+            //if (m_LevelSuffixes.Length > 0 && Random.Range(0, 1.0f) >= 0.5f)
+            //{
+            //    roll = Random.Range(0, m_LevelSuffixes.Length);
+            //    level.LevelSuffix.LocalizedIdentifier = m_LevelSuffixes[roll];
+            //}
         }
 
         public override void GeneratePossibleEnemies(ProceduralLevel level)
@@ -148,6 +154,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
             List<Enemy> possibleEnemies = new List<Enemy>();
             foreach(Enemy enemy in enemies)
             {
+                if (!enemy.IsSpawnable) continue;
                 if (enemy.Difficulty > maxEnemyDifficulty)
                 {
                     continue;
@@ -213,6 +220,10 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
                 weight -= tags[tagIndex].Weight;
                 tags.RemoveAt(tagIndex);
             }
+            if (tagList.Count == 0)
+            {
+                tagList.Add(m_DefaultTag.Object);
+            }
             level.TagList = tagList;
         }
 
@@ -229,8 +240,8 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
             float minWaveDelay = m_MinimumWaveDelay.Evaluate(level.Difficulty);
             float maxWaveDelay = m_MaximumWaveDelay.Evaluate(level.Difficulty);
 
-            level.Width = 100f;
-            level.Height = 75f;
+            level.Width = 40f;
+            level.Height = 40f;
 
             level.TimeBetweenWaves = (int)Math.Round(Random.Range(minWaveDelay, maxWaveDelay));
         }

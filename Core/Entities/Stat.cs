@@ -134,14 +134,30 @@ namespace AdventuresUnknownSDK.Core.Entities
                 }
                 float newValue = value;
                 float minValue = float.MinValue;
-                if (m_ModType != null && m_ModType.AlwaysTakeMax)
+                float maxValue = float.MaxValue;
+                bool canGetHigherThanCalc = false;
+                bool alwaysTakeMax = false;
+                if (m_ModType != null)
+                {
+                    alwaysTakeMax = m_ModType.AlwaysTakeMax;
+                    minValue = m_ModType.MinValue;
+                    maxValue = m_ModType.MaxValue;
+                    canGetHigherThanCalc = m_ModType.CanGetHigherThanCalculated;
+                }
+                if (alwaysTakeMax)
                 {
                     newValue = m_Calculated;
-                    minValue = m_ModType.MinValue;
                 }
                 else
                 {
-                    newValue = Mathf.Clamp(newValue, minValue, m_Calculated);
+                    if (canGetHigherThanCalc)
+                    {
+                        newValue = Mathf.Clamp(newValue, minValue, maxValue);
+                    }
+                    else
+                    {
+                        newValue = Mathf.Clamp(newValue, minValue, m_Calculated);
+                    }
                 }
                 if (newValue != m_Current)
                 {
@@ -178,6 +194,20 @@ namespace AdventuresUnknownSDK.Core.Entities
                 {
                     statModifier.IsDirty = value;
                 }
+            }
+        }
+
+        public bool IsDefault
+        {
+            get
+            {
+                if (Flat != 0.0f ||
+                    Increased != 1.0f ||
+                    More != 1.0f ||
+                    FlatExtra != 0.0f ||
+                    Calculated != 0.0f || 
+                    CalculatedNoExtra != 0.0f) return false;
+                return true;
             }
         }
         #endregion
@@ -236,6 +266,7 @@ namespace AdventuresUnknownSDK.Core.Entities
             m_More = 1.0f;
             m_FlatExtra = 0.0f;
             m_Calculated = 0.0f;
+            m_CalculatedNoExtra = 0.0f;
         }
 
         protected virtual void Recalculate()
@@ -249,12 +280,14 @@ namespace AdventuresUnknownSDK.Core.Entities
             float maxValue = float.MaxValue;
             bool alwaysTakeMax = false;
             bool roundDown = false;
+            bool canGetHigherThanCalc = false;
             if (m_ModType != null)
             {
                 minValue = m_ModType.MinValue;
                 maxValue = m_ModType.MaxValue;
                 alwaysTakeMax = m_ModType.AlwaysTakeMax;
                 roundDown = m_ModType.RoundDown;
+                canGetHigherThanCalc = m_ModType.CanGetHigherThanCalculated;
             }
             float newCalculated = Mathf.Clamp(m_Flat * m_Increased * m_More, minValue, maxValue);
             if (newCalculated != m_CalculatedNoExtra)
@@ -276,7 +309,14 @@ namespace AdventuresUnknownSDK.Core.Entities
             }
             else
             {
-                m_Current = Mathf.Clamp(m_Current, minValue, m_Calculated);
+                if (canGetHigherThanCalc)
+                {
+                    m_Current = Mathf.Clamp(m_Current, minValue, maxValue);
+                }
+                else
+                {
+                    m_Current = Mathf.Clamp(m_Current, minValue, m_Calculated);
+                }
             }
             if (m_Calculated != 0.0f)
             {
@@ -394,7 +434,24 @@ namespace AdventuresUnknownSDK.Core.Entities
                    m_Current == stat.m_Current;
         }
 
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
 
+            sb.Append(ModTypeIdentifier);
+            sb.Append(": ");
+            sb.Append(Flat);
+            sb.Append(" * ");
+            sb.Append(Increased);
+            sb.Append(" * ");
+            sb.Append(More);
+            sb.Append(" + ");
+            sb.Append(FlatExtra);
+            sb.Append(" = ");
+            sb.Append(Calculated);
+
+            return sb.ToString();
+        }
         #endregion
     }
 }

@@ -1,4 +1,5 @@
-﻿using AdventuresUnknownSDK.Core.Managers;
+﻿using AdventuresUnknownSDK.Core.Entities;
+using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System;
@@ -12,9 +13,9 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.ModBases
     [CreateAssetMenu(menuName = "AdventuresUnknown/Core/Mods/ModBases/BasicModBase",fileName="BasicModBase.asset")]
     public class BasicModBase : CoreObject
     {
-        [SerializeField] private ModTypeIdentifier m_ModTypeIdentifier;
+        [SerializeField] private ModTypeIdentifier m_ModTypeIdentifier = null;
         [SerializeField] private CalculationType m_CalculationType = CalculationType.Flat;
-        
+
         #region Properties
         public CalculationType CalculationType
         {
@@ -49,13 +50,18 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.ModBases
             sb.Append(CalculationType);
             return sb.ToString().ToLowerInvariant();
         }
-        public void OnValidate()
+        public virtual void OnValidate()
         {
             ForceUpdateImmediately();
         }
         public virtual string ToText(string formatterIdentifier, float value)
         {
             return m_ModTypeIdentifier.Object.ToText(formatterIdentifier, value, m_CalculationType);
+        }
+        public virtual void AddStatModifierTo(Entity entity,float value,object source)
+        {
+            Stat stat = entity.GetStat(this.ModTypeIdentifier);
+            stat.AddStatModifier(new StatModifier(value, this.CalculationType, source));
         }
         #endregion
     }

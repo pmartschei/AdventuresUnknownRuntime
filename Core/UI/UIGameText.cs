@@ -21,6 +21,7 @@ namespace AdventuresUnknownSDK.Core.UI
 
         protected TMP_Text Text { get => m_Text; set => m_Text = value; }
         protected StringEvent OnTextChange { get => m_OnTextChange; set => m_OnTextChange = value; }
+
         #endregion
 
         #region Methods
@@ -33,6 +34,11 @@ namespace AdventuresUnknownSDK.Core.UI
                 m_Text.text = text;
                 m_OnTextChange.Invoke(text);
             }
+        }
+        public override void SetColor(Color color)
+        {
+            if (!m_Text) return;
+            m_Text.color = color;
         }
         #endregion
     }

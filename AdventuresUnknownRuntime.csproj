@@ -50,12 +50,20 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.AIModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.Physics2DModule">
       <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.Physics2DModule.dll</HintPath>
@@ -73,34 +81,69 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Attributes\LayerAttribute.cs" />
     <Compile Include="Core\Attributes\LowerCaseOnlyAttribute.cs" />
     <Compile Include="Core\Attributes\ReadOnlyAttribute.cs" />
     <Compile Include="Core\Attributes\ReduceHierarchyAttribute.cs" />
     <Compile Include="Core\Entities\BaseEntityStats.cs" />
+    <Compile Include="Core\Entities\Controllers\ActivationParameters.cs" />
+    <Compile Include="Core\Entities\Controllers\Interfaces\IAttackController.cs" />
+    <Compile Include="Core\Entities\Controllers\Interfaces\IMuzzleComponentController.cs" />
+    <Compile Include="Core\Entities\Controllers\Interfaces\IRotationalController.cs" />
+    <Compile Include="Core\Entities\Controllers\Interfaces\ITranslationalController.cs" />
+    <Compile Include="Core\Entities\Controllers\MuzzleController.cs" />
     <Compile Include="Core\Entities\EntityBehaviour.cs" />
     <Compile Include="Core\Entities\EntityDescription.cs" />
     <Compile Include="Core\Entities\EntityType.cs" />
     <Compile Include="Core\Entities\StateMachine\EntityState.cs" />
     <Compile Include="Core\Entities\StateMachine\EntityStateMachine.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\MoveTowardsTargetState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\AimTowardsTargetState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\AttackPatternState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\AttackState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\ChangeWhenTargetState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\KeepTargetDistanceState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\MinionTargetCommandState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\MultiState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\Muzzles\MuzzleKeepTargetDistanceState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\Muzzles\MuzzleSearchTargetState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\OrbitParentState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\RandomRotationState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\SearchTargetState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\WanderAroundTargetState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\WanderState.cs" />
+    <Compile Include="Core\Entities\StateMachine\EntityStates\WanderUntilTarget.cs" />
     <Compile Include="Core\Entities\StateMachine\SerializableEntityStateType.cs" />
     <Compile Include="Core\Entities\StateMachine\Uninitalized.cs" />
+    <Compile Include="Core\Entities\Weapons\Muzzle.cs" />
     <Compile Include="Core\Logic\ActiveGemContainers\EnemyActiveGemContainer.cs" />
+    <Compile Include="Core\Managers\ExperienceManager.cs" />
+    <Compile Include="Core\Managers\InputManager.cs" />
+    <Compile Include="Core\Managers\LevelObjectManager.cs" />
+    <Compile Include="Core\Managers\PoolManager.cs" />
     <Compile Include="Core\Managers\ProtectionCauseManager.cs" />
     <Compile Include="Core\Managers\ActionTypeManager.cs" />
     <Compile Include="Core\Managers\DropManager.cs" />
     <Compile Include="Core\Managers\ModActionManager.cs" />
     <Compile Include="Core\Managers\ModifierManager.cs" />
+    <Compile Include="Core\Objects\Datas\VendorData.cs" />
+    <Compile Include="Core\Objects\Effects\Effect.cs" />
+    <Compile Include="Core\Objects\Effects\EffectContext.cs" />
+    <Compile Include="Core\Objects\Experience\ExperienceController.cs" />
+    <Compile Include="Core\Objects\Experience\ExponentExperienceController.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Costs\ScaledCosts.cs" />
+    <Compile Include="Core\Objects\Items\DisplayMods.cs" />
+    <Compile Include="Core\Objects\Pool\IPooledComponent.cs" />
+    <Compile Include="Core\Objects\Levels\CompletedLevel.cs" />
     <Compile Include="Core\Objects\Datas\HotkeyData.cs" />
+    <Compile Include="Core\Objects\Datas\HotkeyDisplayData.cs" />
     <Compile Include="Core\Objects\Datas\JourneyData.cs" />
     <Compile Include="Core\Objects\Datas\WalletData.cs" />
     <Compile Include="Core\Objects\DropTables\DropRate.cs" />
-    <Compile Include="Core\Objects\Enemies\AttackPattern.cs" />
-    <Compile Include="Core\Objects\Enemies\Behaviours\MoveToTargetBehaviour.cs" />
-    <Compile Include="Core\Objects\Enemies\Behaviours\AimAtTargetBehaviour.cs" />
+    <Compile Include="Core\Objects\Enemies\ActiveGemCollection.cs" />
     <Compile Include="Core\Entities\Controllers\EnemyController.cs" />
     <Compile Include="Core\Entities\Controllers\PlayerController.cs" />
     <Compile Include="Core\Entities\Controllers\EntityController.cs" />
-    <Compile Include="Core\Objects\Enemies\Behaviours\EnemyStateMachineBehaviour.cs" />
     <Compile Include="Core\Entities\Entity.cs" />
     <Compile Include="Core\Entities\IActiveStat.cs" />
     <Compile Include="Core\Entities\StatModifier.cs" />
@@ -137,31 +180,45 @@
     <Compile Include="Core\Objects\DropTables\DropTable.cs" />
     <Compile Include="Core\Objects\Enemies\Enemy.cs" />
     <Compile Include="Core\Objects\Enemies\EnemyModel.cs" />
-    <Compile Include="Core\Objects\Enemies\SingleAttackPattern.cs" />
     <Compile Include="Core\Objects\Items\Actions\Costs\UnscaledCosts.cs" />
     <Compile Include="Core\Objects\Items\Actions\CraftingAction.cs" />
     <Compile Include="Core\Objects\Items\Actions\CraftingActionCatalog.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Enabler\PowerLevelEnabler.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Enabler\ModCountEnabler.cs" />
     <Compile Include="Core\Objects\Items\Actions\Interfaces\AbstractCosts.cs" />
     <Compile Include="Core\Objects\Items\Actions\Interfaces\AbstractEnabler.cs" />
     <Compile Include="Core\Objects\Items\Actions\Interfaces\AbstractInvoker.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Invoker\IncreasePowerLevelInvoker.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Invoker\RandomModifyInvoker.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Invoker\RetierRandomModInvoker.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Invoker\RerollRandomModInvoker.cs" />
+    <Compile Include="Core\Objects\Items\Actions\Invoker\RemoveRandomModInvoker.cs" />
     <Compile Include="Core\Objects\Items\Actions\Invoker\AddRandomModInvoker.cs" />
+    <Compile Include="Core\Objects\Items\ValueType.cs" />
     <Compile Include="Core\Objects\Levels\BasicLevelGeneratorDescription.cs" />
+    <Compile Include="Core\Objects\Levels\CompletedLevelEvent.cs" />
     <Compile Include="Core\Objects\Levels\Level.cs" />
     <Compile Include="Core\Objects\Levels\LevelGeneratorDescription.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ActionObjects\CooldownContext.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ActionObjects\ProtectionCause.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\AttackActions\AttackApplyAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\AttackActions\AttackGenerationAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\AttackActions\BloodMagicAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\CalculationActions\RemoveOldestMinionsCalculationAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ConditionAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ConditionActions\CheckDescriptionAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ConditionActions\CheckIsDeadAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\ConditionActions\CheckAttackTagAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ConditionActions\RollConditionAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\CooldownActions\ApplyCooldownAction.cs" />
-    <Compile Include="Core\Objects\Mods\Actions\CooldownActions\CheckIfAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\CooldownActions\AttackCooldownGenerationAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\CooldownActions\CheckCooldownAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\ApplyHitGenerationAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\CalculationStatManipulationAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\DamageAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\CalculationActions\CalculationAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\DamageMultiplierAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\CooldownActions\AttackCooldownApplyAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\HitApplyAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\HitCalculationAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\HitActions\HitGenerationAction.cs" />
@@ -172,11 +229,18 @@
     <Compile Include="Core\Objects\Mods\Actions\TickActions\TickAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\ApplyAsAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ConditionActions\CheckModAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\UtilityActions\ApplyEffectAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\UtilityActions\CastOnNotifyAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\ConditionFollowAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\UtilityActions\CollectExperienceAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\UtilityActions\CollectCurrencyAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\DropOnDeathAction.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\UtilityActions\HealAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\SetEntityDeadAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\MultiAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\NotifyAction.cs" />
+    <Compile Include="Core\Objects\Pool\PoolDescription.cs" />
+    <Compile Include="Core\Objects\Pool\PooledTrailRenderer.cs" />
     <Compile Include="Core\Objects\Tags\Tag.cs" />
     <Compile Include="Core\Objects\Events\GameEvent.cs" />
     <Compile Include="Core\Objects\Events\GameEventListener.cs" />
@@ -215,6 +279,8 @@
     <Compile Include="Core\Objects\SafeLoadCheck.cs" />
     <Compile Include="Core\Objects\Tags\TagList.cs" />
     <Compile Include="Core\Objects\Tags\WeightedTagList.cs" />
+    <Compile Include="Core\UI\Interfaces\IDropPreviewhandler.cs" />
+    <Compile Include="Core\UI\Interfaces\IDragOverHandler.cs" />
     <Compile Include="Core\UI\Items\AbstractActiveGemDisplay.cs" />
     <Compile Include="Core\UI\Items\AbstractItemStackDisplay.cs" />
     <Compile Include="Core\UI\Interfaces\ICurrencyText.cs" />
@@ -222,7 +288,11 @@
     <Compile Include="Core\UI\Interfaces\IGameText.cs" />
     <Compile Include="Core\UI\Items\Interfaces\IEntityDisplay.cs" />
     <Compile Include="Core\UI\Items\Interfaces\IInventorySlot.cs" />
+    <Compile Include="Core\UI\Items\Interfaces\IPreview.cs" />
     <Compile Include="Core\UI\Items\UIDragDropItemStack.cs" />
+    <Compile Include="Core\UI\AdventuresUnknownInputModule.cs" />
+    <Compile Include="Core\UI\Items\UIDropItemStackFilter.cs" />
+    <Compile Include="Core\UI\Items\UIInventorySlotPreview.cs" />
     <Compile Include="Core\UI\Levels\AbstractLevelDisplay.cs" />
     <Compile Include="Core\UI\Statics\UIRegisterAsAttackTransform.cs" />
     <Compile Include="Core\UI\Statics\UIRegisterAsEntityTransform.cs" />
@@ -243,10 +313,16 @@
     <Compile Include="Core\Utils\Events\FloatEvent.cs" />
     <Compile Include="Core\Utils\Events\IntEvent.cs" />
     <Compile Include="Core\Utils\Events\StatEvent.cs" />
+    <Compile Include="Core\Utils\Events\BoolEvent.cs" />
     <Compile Include="Core\Utils\Events\StringEvent.cs" />
     <Compile Include="Core\Utils\Extensions\CanvasGroupExtension.cs" />
     <Compile Include="Core\Utils\Extensions\RectTransformExtension.cs" />
+    <Compile Include="Core\Utils\Extensions\ExecuteEventsExtension.cs" />
     <Compile Include="Core\Utils\Extensions\TransformExtension.cs" />
+    <Compile Include="Core\Utils\Identifiers\VendorDataIdentifier.cs" />
+    <Compile Include="Core\Utils\Identifiers\EffectIdentifier.cs" />
+    <Compile Include="Core\Utils\Identifiers\ActiveGemIdentifier.cs" />
+    <Compile Include="Core\Utils\Identifiers\HotkeyDataIdentifier.cs" />
     <Compile Include="Core\Utils\Identifiers\DropTableIdentifier.cs" />
     <Compile Include="Core\Utils\Identifiers\JourneyDataIdentifier.cs" />
     <Compile Include="Core\Utils\Identifiers\CraftingActionCatalogIdentifier.cs" />
@@ -266,6 +342,7 @@
     <Compile Include="Core\Utils\Identifiers\TagIdentifier.cs" />
     <Compile Include="Core\Utils\Identifiers\ModTypeIdentifier.cs" />
     <Compile Include="Core\Utils\Identifiers\ObjectIdentifier.cs" />
+    <Compile Include="Core\Utils\ModUtils.cs" />
     <Compile Include="Core\Utils\Serialization\AdventuresUnknownSerializeUtils.cs" />
     <Compile Include="Core\Utils\Serialization\FieldInfoEqualityComparer.cs" />
     <Compile Include="Core\Utils\Serialization\FileObject.cs" />
@@ -277,9 +354,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Core\Objects\Items\Actions\Enabler\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /y "$(TargetDir)$(ProjectName).dll" "$(SolutionDir)Assets\AdventuresUnknown\Plugins\$(ProjectName).dll

@@ -19,6 +19,7 @@ namespace AdventuresUnknownSDK.Core.UI.Items
 
         [NonSerialized]
         private CanvasGroup m_CanvasGroup;
+        private ItemStack m_ItemStack = null;
 
         #region Properties
         public override Inventory Inventory
@@ -54,15 +55,32 @@ namespace AdventuresUnknownSDK.Core.UI.Items
 
         private void OnDisable()
         {
+            if (m_ItemStack != null)
+            {
+                m_ItemStack.OnItemChange.RemoveListener(Display);
+            }
             Inventory.OnSlotUpdateEvent.RemoveListener(OnSlotUpdate);
         }
 
         private void OnSlotUpdate(int slot)
         {
             if (slot != m_Slot) return;
+            if (m_ItemStack != null)
+            {
+                m_ItemStack.OnItemChange.RemoveListener(Display);
+            }
+            m_ItemStack = Inventory.Items[m_Slot];
+            if (m_ItemStack != null)
+            {
+                m_ItemStack.OnItemChange.AddListener(Display);
+            }
+            Display();
+        }
 
-            if (m_ItemStackDisplay!=null)
-                m_ItemStackDisplay.Display(Inventory.Items[m_Slot]);
+        private void Display()
+        {
+            if (m_ItemStackDisplay != null)
+                m_ItemStackDisplay.Display(m_ItemStack);
         }
         #endregion
 
