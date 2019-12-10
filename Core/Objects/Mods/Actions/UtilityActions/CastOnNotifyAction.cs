@@ -19,7 +19,18 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.UtilityActions
         {
             if (!m_ActiveGemIdentifier.Object) return;
             if (activeStats.GetStat(ModType.Identifier).Calculated == 0.0f) return;
-            m_ActiveGemIdentifier.Object.Activate(activeStats.EntityBehaviour.EntityController, activeStats, m_Level);
+            float level = m_Level;
+            if (level < 0)
+            {
+                level = (int)(activeStats.GetStat("core.modtypes.utility.level").Calculated / 5);
+            }
+            Entity stats = new Entity();
+            stats.CopyFrom(activeStats);
+            foreach (Objects.Mods.Attribute attribute in m_ActiveGemIdentifier.Object.Attributes)
+            {
+                stats.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.GetValue(level), attribute.ModBase.CalculationType, m_ActiveGemIdentifier.Object));
+            }
+            m_ActiveGemIdentifier.Object.Activate(activeStats.EntityBehaviour.EntityController, stats, level);
         }
         public override void Initialize(ModType modType)
         {

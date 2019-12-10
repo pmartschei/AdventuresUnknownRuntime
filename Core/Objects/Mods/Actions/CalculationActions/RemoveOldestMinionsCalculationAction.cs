@@ -20,23 +20,30 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CalculationActions
         #endregion
 
         #region Methods
-        public override void Initialize(Entity activeStats)
-        {
-            base.Initialize(activeStats);
-            Stat mod = activeStats.GetStat(ModType.Identifier);
-            activeStats.NotifyOnStatChange(mod, this);
-        }
         public override void Notify(Entity activeStats, ActionContext actionContext)
         {
             Stat mod = activeStats.GetStat(ModType.Identifier);
-            int minionsToDelete = (int)(mod.Current - mod.Calculated);
-            if (minionsToDelete > 0)
-            {
-                List<Entity> minions = activeStats.GetMinions(ModType.Identifier);
+            mod.OnCurrentChange += new InternalCheck(activeStats).CheckMinions;
+        }
 
-                for(int i = 0; i < minionsToDelete; i++)
+        private class InternalCheck
+        {
+            private Entity m_Entity;
+            public InternalCheck(Entity entity)
+            {
+                m_Entity = entity;
+            }
+            public void CheckMinions(Stat stat)
+            {
+                int minionsToDelete = (int)(stat.Current - stat.Calculated);
+                if (minionsToDelete > 0)
                 {
-                    minions[i].Notify(ActionTypeManager.Death);
+                    List<Entity> minions = m_Entity.GetMinions(stat.ModTypeIdentifier);
+
+                    for (int i = 0; i < minionsToDelete; i++)
+                    {
+                        minions[i].Notify(ActionTypeManager.Death);
+                    }
                 }
             }
         }

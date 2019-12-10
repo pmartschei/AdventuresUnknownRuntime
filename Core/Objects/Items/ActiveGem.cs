@@ -7,6 +7,7 @@ using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Objects.Items;
 using AdventuresUnknownSDK.Core.Objects.Mods;
 using AdventuresUnknownSDK.Core.Objects.Pool;
+using AdventuresUnknownSDK.Core.UI.Items;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         [SerializeField] private DisplayMods m_DisplayMods = null;
         [SerializeField] private GenericAttack m_GenericAttack = null;
         [SerializeField] private ActiveGemIdentifier[] m_SecondaryActiveGems = null;
+        [SerializeField] private AbstractActiveGemDisplay m_DisplayPrefab = null;
 
         [NonSerialized]
         private List<Attribute> m_ConsistentAttributes = new List<Attribute>();
@@ -37,6 +39,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
         public ModTypeIdentifier[] DisplayMods { get => m_DisplayMods.Mods; }
         public Attribute[] Attributes { get => m_ConsistentAttributes.ToArray(); }
         public bool AIRequiresTarget { get => m_GenericAttack.AIRequiresTarget; set => m_GenericAttack.AIRequiresTarget = value; }
+        public AbstractActiveGemDisplay DisplayPrefab { get => m_DisplayPrefab; set => m_DisplayPrefab = value; }
         #endregion
 
         #region Methods
@@ -114,7 +117,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
             return false;
         }
 
-        public virtual void Activate(EntityController entityController, Entity stats ,float level = 0.0f, params Muzzle[] muzzles)
+        public virtual void Activate(EntityController entityController, Entity stats ,float level = 0.0f, ulong ID = 0, params Muzzle[] muzzles)
         {
             List<Muzzle> validMuzzles = new List<Muzzle>();
             if (muzzles != null)
@@ -131,9 +134,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
             activationParameters.Stats = stats;
             activationParameters.FrozenStats = new Entity();
             activationParameters.FrozenStats.CopyFrom(stats);
+            activationParameters.FrozenStats.RemoveAllModifiersBySource(this);
             activationParameters.Level = level;
             activationParameters.Muzzles = validMuzzles.ToArray();
             activationParameters.SecondaryActiveGems = m_SecondaryActiveList.ToArray();
+            activationParameters.ID = ID;
             entityController.StartCoroutine(m_GenericAttack.Activate(activationParameters));
         }
         private ValueMod[] GetImplicits(ItemStack itemStack)
@@ -143,7 +148,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
             foreach (Attribute attribute in m_ConsistentAttributes)
             {
                 ValueMod valueMod = new ValueMod();
-                valueMod.Value = attribute.Value(itemStack.PowerLevel);
+                valueMod.Value = attribute.GetValue(itemStack.PowerLevel);
                 valueMod.Identifier = attribute.ModBaseIdentifier;
                 valueMods.Add(valueMod);
             }

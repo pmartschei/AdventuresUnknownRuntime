@@ -47,6 +47,14 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
         }
 
         public abstract Entity CalculateEntity(int index);
+        public virtual Entity GetEntityWithApply(int index)
+        {
+            return CalculateEntity(index);
+        }
+        public virtual string[] CalculateDisplayMods(int index)
+        {
+            return new string[0];
+        }
         public abstract void Spawn(EntityController origin,int index,params Muzzle[] muzzles);
         #endregion
     }

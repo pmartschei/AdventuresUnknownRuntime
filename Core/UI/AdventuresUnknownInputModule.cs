@@ -34,27 +34,30 @@ namespace AdventuresUnknownSDK.Core.UI
             bool value;
             if (pointerEvent.dragging)
             {
-                if (!m_IsDragging.TryGetValue(pointerEvent.button,out value))
+                if (!m_IsDragging.TryGetValue(pointerEvent.button, out value))
                 {
-                    m_IsDragging.Add(pointerEvent.button, true);
+                    m_IsDragging.Add(pointerEvent.button, false);
                 }
-                else
+
+                if (!m_IsDragging[pointerEvent.button])
                 {
                     m_IsDragging[pointerEvent.button] = true;
+                    ExecuteEventsExtension.ExecuteHierarchyDown(pointerEvent.pointerDrag.transform.root.gameObject, pointerEvent, DropPreviewHandler);
                 }
                 GameObject currentOverGo = pointerEvent.pointerCurrentRaycast.gameObject;
-                ExecuteEventsExtension.ExecuteHierarchyDown(pointerEvent.pointerDrag.transform.root.gameObject, pointerEvent, DropPreviewHandler);
                 if (currentOverGo)
                 {
                     ExecuteEvents.Execute(currentOverGo, pointerEvent, DragOverHandler);
                 }
             }
-            bool released = GetMousePointerEventData().GetButtonState(pointerEvent.button).eventData.ReleasedThisFrame();
-            bool available = m_IsDragging.TryGetValue(pointerEvent.button, out value);
-            if (released && available && value)
+            else
             {
-                m_IsDragging[pointerEvent.button] = false;
-                ExecuteEventsExtension.ExecuteHierarchyDown(pointerEvent.lastPress.transform.root.gameObject, pointerEvent, EndDropPreviewHandler);
+                bool available = m_IsDragging.TryGetValue(pointerEvent.button, out value);
+                if (available && value)
+                {
+                    m_IsDragging[pointerEvent.button] = false;
+                    ExecuteEventsExtension.ExecuteHierarchyDown(pointerEvent.lastPress.transform.root.gameObject, pointerEvent, EndDropPreviewHandler);
+                }
             }
         }
 

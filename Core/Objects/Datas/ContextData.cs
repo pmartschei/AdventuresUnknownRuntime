@@ -1,7 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Entities;
 using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.GameModes;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -105,6 +105,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
             contextData.PlayTime = this.PlayTime;
             contextData.GameMode = this.GameMode;
             contextData.SaveFileName = this.SaveFileName;
+            contextData.OnValidate();
         }
 
         private void OnValidate()

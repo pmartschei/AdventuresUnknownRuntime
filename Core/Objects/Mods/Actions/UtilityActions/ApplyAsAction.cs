@@ -14,32 +14,29 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.UtilityActions
     public class ApplyAsAction : MultipleBaseAction
     {
         [SerializeField] private ModTypeIdentifier m_Target = null;
-        [SerializeField] private bool m_KeepPercentage = true;
+        [SerializeField] private bool m_ShipAsTarget = false;
         #region Properties
 
         #endregion
 
         #region Methods
-        public override void Initialize(Entity activeStats)
-        {
-            activeStats.NotifyOnStatChange(activeStats.GetStat(ModType.Identifier), this.Root);
-        }
 
         public override void Notify(Entity activeStats, ActionContext actionContext)
         {
-            Stat target = activeStats.GetStat(m_Target.Identifier);
+            Entity targetEntity = m_ShipAsTarget ? activeStats.EntityBehaviour.Entity : activeStats;
+            if (targetEntity == null) targetEntity = activeStats;
+            Stat target = targetEntity.GetStat(m_Target.Identifier);
             Stat source = activeStats.GetStat(ModType.Identifier);
+            AuraContext auraContext = actionContext as AuraContext;
 
-            float percentage = target.Percentage;
-            target.RemoveStatModifiersBySource(this);
-            target.AddStatModifier(new StatModifier(source.Flat, CalculationType.Flat, this));
-            target.AddStatModifier(new StatModifier(source.Increased -1.0f, CalculationType.Increased, this));
-            target.AddStatModifier(new StatModifier(source.More -1.0f, CalculationType.More, this));
-            target.AddStatModifier(new StatModifier(source.FlatExtra, CalculationType.FlatExtra, this));
-            if (m_KeepPercentage)
-            {
-                target.Current = target.Calculated * percentage;
-            }
+            object sourceObject = this;
+            sourceObject = auraContext?.Source;
+
+            target.RemoveStatModifiersBySource(sourceObject);
+            target.AddStatModifier(new StatModifierByStat(source, CalculationType.Flat, sourceObject));
+            target.AddStatModifier(new StatModifierByStat(source, CalculationType.Increased, sourceObject));
+            target.AddStatModifier(new StatModifierByStat(source, CalculationType.More, sourceObject));
+            target.AddStatModifier(new StatModifierByStat(source, CalculationType.FlatExtra, sourceObject));
         }
         #endregion
     }

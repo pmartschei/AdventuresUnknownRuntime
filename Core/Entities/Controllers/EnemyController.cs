@@ -119,6 +119,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
         }
         public bool IsNearTarget(int index,float multiplier = 0.9f)
         {
+            if (!Target) return false;
             Vector3 distance = transform.position - Target.Head.position;
             float attackMax = GetAttackMaxDistance(index);
             attackMax *= attackMax;

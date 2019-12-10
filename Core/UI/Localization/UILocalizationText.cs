@@ -1,7 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Localization;
 using AdventuresUnknownSDK.Core.Utils;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,8 @@ namespace AdventuresUnknownSDK.Core.UI.Localization
 
         private void OnDisable()
         {
-            GameSettingsManager.OnLanguageChange.RemoveListener(OnLanguageChange);
+            if (GameSettingsManager.Instance)
+                GameSettingsManager.OnLanguageChange.RemoveListener(OnLanguageChange);
         }
         public void OnLanguageChange()
         {

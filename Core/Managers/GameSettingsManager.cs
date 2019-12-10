@@ -1,7 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Objects.Localization;
 using AdventuresUnknownSDK.Core.Objects.Mods;
 using AdventuresUnknownSDK.Core.Utils;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using System;
 using System.Collections.Generic;
 using System.Linq;

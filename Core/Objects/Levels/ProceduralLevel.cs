@@ -9,6 +9,7 @@ using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.Enemies;
 using System.Collections.Generic;
 using System.Collections;
+using AdventuresUnknownSDK.Core.Entities;
 
 namespace AdventuresUnknownSDK.Core.Objects.Levels
 {
@@ -21,6 +22,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
         private int m_CurrentWave = 0;
 
         private List<EnemyModel> m_AliveEnemies = new List<EnemyModel>();
+        private List<SpawnObject> m_SpawnObjects = new List<SpawnObject>();
         private Wave m_NextWave = null;
 
         private bool m_IsSpawning = false;
@@ -77,9 +79,17 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
                     i--;
                 }
             }
+            for (int i = 0; i < m_SpawnObjects.Count; i++)
+            {
+                if (!m_SpawnObjects[i].IsSpawning)
+                {
+                    m_SpawnObjects.RemoveAt(i);
+                    i--;
+                }
+            }
             if (NextWave == null)
             {
-                if (RemainingEnemies == 0 && !m_IsSpawning)
+                if (RemainingEnemies == 0 && m_SpawnObjects.Count == 0)
                 {
                     LevelManager.IsPaused = true;
                     LevelManager.Success();
@@ -98,8 +108,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
                 if (m_CurrentWaveTimer <= 0.0f)
                 {
                     m_CurrentWaveTimer = TimeBetweenWaves;
-                    m_IsSpawning = true;
-                    LevelManager.Instance.StartCoroutine(SpawnWave(NextWave));
+                    SpawnWave(NextWave);
                     m_CurrentWave++;
                 }
             }
@@ -135,24 +144,22 @@ namespace AdventuresUnknownSDK.Core.Objects.Levels
             m_NextWave = wave;
         }
 
-        private IEnumerator SpawnWave(Wave wave)
+        private void SpawnWave(Wave wave)
         {
-            Vector2 centerPosition = Random.insideUnitCircle * new Vector2(Width * 0.5f,Height * 0.5f);
-            float roll = Random.Range(0.05f + wave.Enemy.Difficulty * 0.010f, 0.15f + wave.Enemy.Difficulty * 0.05f);
-            Vector2 spawnSize = new Vector2(Width * roll, Height * roll);
-            float spawnDelay = 0.0f;
-            if (wave.Count > 0)
-                spawnDelay = 1 / wave.Count;
-            for (int i = 0; i < wave.Count; i++)
-            {
-                Vector2 spawnPosition = centerPosition + Random.insideUnitCircle * spawnSize;
-                EnemyModel em = LevelManager.SpawnEnemy(wave.Enemy, new Vector3(spawnPosition.x, 0.0f,spawnPosition.y));
-                em.EntityBehaviour.Entity.GetStat("core.modtypes.utility.level").AddStatModifier(new Entities.StatModifier(EnemyLevel, CalculationType.Flat, this));
-                m_AliveEnemies.Add(em);
-                yield return new WaitForSeconds(spawnDelay);
-            }
-            m_IsSpawning = false;
-            yield break;
+            Random.InitState((int)DateTime.Now.Ticks);
+            Vector2 centerPosition = Random.insideUnitCircle * new Vector2(Width * 0.45f,Height * 0.45f);
+
+            SpawnObject so = GameObject.Instantiate(wave.Enemy.SpawnObject,new Vector3(centerPosition.x,0.0f,centerPosition.y),Quaternion.identity, UIManager.EntityTransform);
+            so.Enemy = wave.Enemy;
+            so.Count = wave.Count;
+            so.EnemyLevel = EnemyLevel;
+            so.OnEnemySpawn += OnEnemySpawn;
+            m_SpawnObjects.Add(so);
+        }
+
+        private void OnEnemySpawn(EnemyModel obj)
+        {
+            m_AliveEnemies.Add(obj);
         }
 
         public override void Build(Transform parent)

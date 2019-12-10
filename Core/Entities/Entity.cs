@@ -19,7 +19,6 @@ namespace AdventuresUnknownSDK.Core.Entities
         [NonSerialized] private EntityBehaviour m_EntityBehaviour = null;
         [NonSerialized] private Dictionary<string, Stat> m_Stats = new Dictionary<string, Stat>();
 
-        [NonSerialized] private Dictionary<Stat, List<BaseAction>> m_NotifyCollection = new Dictionary<Stat, List<BaseAction>>();
         [NonSerialized] private Dictionary<object, TimerObject> m_TimerObjects = new Dictionary<object, TimerObject>();
         [NonSerialized] private Dictionary<object, object> m_ObjectDictionary = new Dictionary<object, object>();
 
@@ -46,7 +45,7 @@ namespace AdventuresUnknownSDK.Core.Entities
         public EntityBehaviour EntityBehaviour { get => m_EntityBehaviour; set => m_EntityBehaviour = value; }
         public bool IsDead { get; set; }
         public List<Entity> RegisteredEntities { get => m_RegisteredEntities; }
-        public EffectContext[]  Effects { get => m_Effects.Values.ToArray();  }
+        public EffectContext[] Effects { get => m_Effects.Values.ToArray(); }
 
         #endregion
         #region Methods
@@ -58,7 +57,6 @@ namespace AdventuresUnknownSDK.Core.Entities
         public void Reset()
         {
             m_Stats.Clear();
-            m_NotifyCollection.Clear();
             m_TimerObjects.Clear();
             m_ObjectDictionary.Clear();
             m_MinionsDictionary.Clear();
@@ -107,47 +105,6 @@ namespace AdventuresUnknownSDK.Core.Entities
         private void TickStats(float time)
         {
             Notify(ActionTypeManager.Tick, new TickContext(time));
-            Stat[] stats = m_Stats.Values.ToArray();
-            bool changed = false;
-            foreach (Stat stat in stats)
-            {
-                if (stat.StatChanged)
-                {
-                    List<BaseAction> baseActions = GetNotifyStatList(stat);
-                    if (baseActions != null)
-                    {
-                        foreach (BaseAction baseAction in baseActions)
-                        {
-                            baseAction.Notify(this, null);
-                        }
-                    }
-                    stat.StatChanged = false;
-                    changed = true;
-                }
-            }
-            if (changed)
-            {
-                ChangeModifiersAll();
-            }
-        }
-        private List<BaseAction> GetNotifyStatList(Stat stat)
-        {
-            if (!m_NotifyCollection.ContainsKey(stat)) return null;
-            return m_NotifyCollection[stat];
-        }
-        public void NotifyOnStatChange(Stat stat, BaseAction baseAction)
-        {
-            List<BaseAction> list = new List<BaseAction>();
-            if (!m_NotifyCollection.ContainsKey(stat))
-            {
-                m_NotifyCollection.Add(stat, list);
-            }
-            else
-            {
-                list = m_NotifyCollection[stat];
-            }
-            if (!list.Contains(baseAction))
-                list.Add(baseAction);
         }
         public void Notify(ActionType actionType)
         {
@@ -180,7 +137,7 @@ namespace AdventuresUnknownSDK.Core.Entities
         public bool AddObject(object source, object obj, bool replace)
         {
             object value;
-            if (m_ObjectDictionary.TryGetValue(source,out value))
+            if (m_ObjectDictionary.TryGetValue(source, out value))
             {
                 if (!replace) return false;
                 m_ObjectDictionary.Remove(source);
@@ -190,15 +147,29 @@ namespace AdventuresUnknownSDK.Core.Entities
         }
         public object GetObject(object source)
         {
-            if (!m_ObjectDictionary.ContainsKey(source)) return null;
-            return m_ObjectDictionary[source];
+            object value;
+            if (m_ObjectDictionary.TryGetValue(source, out value))
+            {
+                return value;
+            }
+            return null;
+        }
+
+        public object RemoveObject(object source)
+        {
+            object value;
+            if (m_ObjectDictionary.TryGetValue(source, out value))
+            {
+                m_ObjectDictionary.Remove(source);
+            }
+            return value;
         }
 
         public T GetObject<T>(object source)
         {
             object obj = GetObject(source);
 
-            if (obj!= null && obj is T)
+            if (obj != null && obj is T)
             {
                 return (T)(obj);
             }
@@ -285,33 +256,37 @@ namespace AdventuresUnknownSDK.Core.Entities
 
         public Stat GetStat(string modTypeIdentifier)
         {
-            if (!m_Stats.ContainsKey(modTypeIdentifier))
-            {
-                Stat newStat = new Stat(ObjectsManager.FindObjectByIdentifier<ModType>(modTypeIdentifier));
-                if (newStat.ModType == null)
-                {
-                    GameConsole.LogWarningFormat("Could not get Stat with Identifier {0}", modTypeIdentifier);
-                    Debug.LogWarningFormat(this.EntityBehaviour, "Could not get Stat with Identifier{0}", modTypeIdentifier);
-                }
-                else
-                {
-                    m_Stats.Add(modTypeIdentifier, newStat);
+            Stat foundStat;
+            m_Stats.TryGetValue(modTypeIdentifier, out foundStat);
+            if (foundStat != null) return foundStat;
 
-                    List<int> actionValues = ModActionManager.GetAllRegisteredActionValues();
-                    foreach (int actionValue in actionValues)
-                    {
-                        List<BaseAction> baseActions = ModActionManager.GetActions(actionValue, newStat.ModType);
-                        foreach(BaseAction baseAction in baseActions)
-                        {
-                            baseAction.Initialize(this);
-                        }
-                    }
-                }
-                return newStat;
+            Stat newStat = new Stat(ObjectsManager.FindObjectByIdentifier<ModType>(modTypeIdentifier));
+            if (newStat.ModType == null)
+            {
+                GameConsole.LogWarningFormat("Could not get Stat with Identifier {0}", modTypeIdentifier);
+                Debug.LogWarningFormat(this.EntityBehaviour, "Could not get Stat with Identifier{0}", modTypeIdentifier);
             }
-            return m_Stats[modTypeIdentifier] as Stat;
+            else
+            {
+                m_Stats.Add(modTypeIdentifier, newStat);
+                
+                List<BaseAction> actions = ModActionManager.GetActions(0, newStat.ModType);
+                foreach (BaseAction action in actions)
+                {
+                    action.Notify(this, null);
+                }
+                foreach (Entity entity in RegisteredEntities)
+                {
+                    Stat registeredStat = entity.GetStat(newStat.ModTypeIdentifier);
+                    registeredStat.AddStatModifier(new StatModifierByStat(newStat, CalculationType.Flat, this));
+                    registeredStat.AddStatModifier(new StatModifierByStat(newStat, CalculationType.Increased, this));
+                    registeredStat.AddStatModifier(new StatModifierByStat(newStat, CalculationType.More, this));
+                    registeredStat.AddStatModifier(new StatModifierByStat(newStat, CalculationType.FlatExtra, this));
+                }
+            }
+            return newStat;
         }
-        
+
 
 
         public void CopyFrom(Entity entity)
@@ -322,11 +297,6 @@ namespace AdventuresUnknownSDK.Core.Entities
             foreach (var pair in entity.m_Stats)
             {
                 m_Stats.Add(pair.Key, pair.Value.Copy());
-            }
-
-            foreach (var pair in entity.m_NotifyCollection)
-            {
-                m_NotifyCollection.Add(GetStat(pair.Key.ModTypeIdentifier), pair.Value);
             }
         }
 
@@ -343,48 +313,20 @@ namespace AdventuresUnknownSDK.Core.Entities
                 }
                 m_Stats.Add(pair.Key, pair.Value.Copy());
             }
-            foreach (var pair in entity.m_NotifyCollection)
-            {
-                Stat stat = GetStat(pair.Key.ModTypeIdentifier);
-                if (m_NotifyCollection.ContainsKey(stat))
-                {
-                    List<BaseAction> list = m_NotifyCollection[stat];
-                    foreach (var item in pair.Value)
-                    {
-                        if (list.Contains(item)) continue;
-                        list.Add(item);
-                    }
-                    continue;
-                }
-                m_NotifyCollection.Add(stat, pair.Value);
-            }
         }
 
-        private void ChangeModifiersAll()
-        {
-            for (int i = 0; i < RegisteredEntities.Count; i++)
-            {
-                Entity entity = RegisteredEntities[i];
-                if (entity == null)
-                {
-                    RegisteredEntities.RemoveAt(i);
-                    i--;
-                    continue;
-                }
-                AddModifiers(entity);
-            }
-        }
         private void AddModifiers(Entity entity)
         {
             if (entity == null) return;
             RemoveAllModifiers(entity);
 
-            foreach(Stat stat in Stats)
+            foreach (Stat stat in Stats)
             {
-                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.Flat, CalculationType.Flat, this));
-                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.Increased-1.0f, CalculationType.Increased, this));
-                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.More-1.0f, CalculationType.More, this));
-                entity.GetStat(stat.ModTypeIdentifier).AddStatModifier(new StatModifier(stat.FlatExtra, CalculationType.FlatExtra, this));
+                Stat entityStat = entity.GetStat(stat.ModTypeIdentifier);
+                entityStat.AddStatModifier(new StatModifierByStat(stat, CalculationType.Flat, this));
+                entityStat.AddStatModifier(new StatModifierByStat(stat, CalculationType.Increased, this));
+                entityStat.AddStatModifier(new StatModifierByStat(stat, CalculationType.More, this));
+                entityStat.AddStatModifier(new StatModifierByStat(stat, CalculationType.FlatExtra, this));
             }
         }
 

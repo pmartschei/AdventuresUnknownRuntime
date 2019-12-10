@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.Events;
 
-namespace AdventuresUnknownSDK.Core.Utils.Events
+namespace AdventuresUnknownSDK.Core.Utils.UnityEvents
 {
     public class ActiveStatsCallbackEvent : UnityEvent<Entity>
     {

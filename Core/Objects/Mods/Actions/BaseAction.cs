@@ -26,9 +26,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions
             this.ModType = modType;
             this.Root = this;
         }
-        public virtual void Initialize(Entity activeStats)
-        {
-        }
 
         public virtual void PreNotify(Entity activeStats, ActionContext actionContext)
         {

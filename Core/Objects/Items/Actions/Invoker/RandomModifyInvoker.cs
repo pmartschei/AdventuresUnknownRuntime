@@ -25,6 +25,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items.Actions.Invoker
         #region Methods
         public override void Invoke(ItemStack itemStack)
         {
+            if (itemStack == null) return;
             int count = (int)m_ExplicitCount.Evaluate(UnityEngine.Random.Range(0.0f, 1.0f));
 
             Mod[] availableMods = ModifierManager.GetModifiersForDomainAndTag(1, itemStack.Item.Tags.ToArray());

@@ -4,7 +4,7 @@ using AdventuresUnknownSDK.Core.Managers;
 using AdventuresUnknownSDK.Core.Objects.GameModes;
 using AdventuresUnknownSDK.Core.Objects.Inventories;
 using AdventuresUnknownSDK.Core.Objects.Items.Actions.Invoker;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System;
 using System.Collections.Generic;
@@ -12,6 +12,7 @@ using System.Runtime.Serialization;
 using UnityEngine;
 using UnityEngine.Events;
 using Random = UnityEngine.Random;
+using AdventuresUnknownSDK.Core.Objects.Items;
 
 namespace AdventuresUnknownSDK.Core.Objects.Datas
 {
@@ -72,8 +73,11 @@ namespace AdventuresUnknownSDK.Core.Objects.Datas
             for (int i = 0; i < itemCount; i++)
             {
                 ItemStack itemStack = m_DropTable.Object.Roll(m_PlayerLevel + Random.Range(0, 3), null);
-                ModifierManager.ModifyItemStack(itemStack);
                 if (itemStack == null) continue;
+                if (!(itemStack.Item is Gem))
+                {
+                    ModifierManager.ModifyItemStack(itemStack);
+                }
                 itemStacks.Add(itemStack);
             }
 

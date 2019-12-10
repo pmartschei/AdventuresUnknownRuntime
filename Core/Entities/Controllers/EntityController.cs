@@ -60,6 +60,10 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
                 m_UIHealthBar.SetWidthRelativeInGame(m_UIHealthBarWidth);
             }
         }
+        private void Awake()
+        {
+            Animator = GetComponent<Animator>();
+        }
 
         public virtual void SwitchTarget(EntityController newTarget)
         {

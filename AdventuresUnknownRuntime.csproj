@@ -58,6 +58,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.AudioModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\..\..\Program Files\Unity2018\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
@@ -115,9 +119,13 @@
     <Compile Include="Core\Entities\StateMachine\EntityStates\WanderUntilTarget.cs" />
     <Compile Include="Core\Entities\StateMachine\SerializableEntityStateType.cs" />
     <Compile Include="Core\Entities\StateMachine\Uninitalized.cs" />
+    <Compile Include="Core\Entities\StatModifierByStat.cs" />
+    <Compile Include="Core\Entities\StatModifierStruct.cs" />
+    <Compile Include="Core\Entities\StatStruct.cs" />
     <Compile Include="Core\Entities\Weapons\Muzzle.cs" />
     <Compile Include="Core\Logic\ActiveGemContainers\EnemyActiveGemContainer.cs" />
     <Compile Include="Core\Managers\ExperienceManager.cs" />
+    <Compile Include="Core\Managers\IDManager.cs" />
     <Compile Include="Core\Managers\InputManager.cs" />
     <Compile Include="Core\Managers\LevelObjectManager.cs" />
     <Compile Include="Core\Managers\PoolManager.cs" />
@@ -129,10 +137,15 @@
     <Compile Include="Core\Objects\Datas\VendorData.cs" />
     <Compile Include="Core\Objects\Effects\Effect.cs" />
     <Compile Include="Core\Objects\Effects\EffectContext.cs" />
+    <Compile Include="Core\Objects\Enemies\SpawnObject.cs" />
     <Compile Include="Core\Objects\Experience\ExperienceController.cs" />
     <Compile Include="Core\Objects\Experience\ExponentExperienceController.cs" />
     <Compile Include="Core\Objects\Items\Actions\Costs\ScaledCosts.cs" />
+    <Compile Include="Core\Objects\Items\AuraGem.cs" />
     <Compile Include="Core\Objects\Items\DisplayMods.cs" />
+    <Compile Include="Core\Objects\Mods\Actions\ActionObjects\AuraContext.cs" />
+    <Compile Include="Core\Objects\Sounds\SoundGroup.cs" />
+    <Compile Include="Core\Objects\Mods\AttributesObject.cs" />
     <Compile Include="Core\Objects\Pool\IPooledComponent.cs" />
     <Compile Include="Core\Objects\Levels\CompletedLevel.cs" />
     <Compile Include="Core\Objects\Datas\HotkeyData.cs" />
@@ -241,6 +254,7 @@
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\NotifyAction.cs" />
     <Compile Include="Core\Objects\Pool\PoolDescription.cs" />
     <Compile Include="Core\Objects\Pool\PooledTrailRenderer.cs" />
+    <Compile Include="Core\Objects\Sounds\SoundSource.cs" />
     <Compile Include="Core\Objects\Tags\Tag.cs" />
     <Compile Include="Core\Objects\Events\GameEvent.cs" />
     <Compile Include="Core\Objects\Events\GameEventListener.cs" />
@@ -262,13 +276,11 @@
     <Compile Include="Core\Objects\Mods\Actions\ActionObjects\AttackContext.cs" />
     <Compile Include="Core\Objects\Mods\Actions\AttackActions\ApplyToAttackAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\BaseAction.cs" />
-    <Compile Include="Core\Objects\Mods\Actions\CalculationActions\GainCurrentAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\CalculationActions\GainPercentualAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ActionObjects\HitContext.cs" />
     <Compile Include="Core\Objects\Mods\Actions\CalculationActions\PercentageValueCalculationAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\ModActionCollection.cs" />
     <Compile Include="Core\Objects\Mods\Actions\TickActions\RegenerationAction.cs" />
-    <Compile Include="Core\Objects\Mods\Actions\UtilityActions\GainFlatAction.cs" />
     <Compile Include="Core\Objects\Mods\Actions\UtilityActions\RefreshStatAction.cs" />
     <Compile Include="Core\Objects\Mods\Attribute.cs" />
     <Compile Include="Core\Objects\Mods\CalculationType.cs" />
@@ -298,6 +310,11 @@
     <Compile Include="Core\UI\Statics\UIRegisterAsEntityTransform.cs" />
     <Compile Include="Core\UI\Statics\UIRegisterAsItemDropTransform.cs" />
     <Compile Include="Core\UI\Statics\UIRegisterAsHealthBarTransform.cs" />
+    <Compile Include="Core\UI\Tooltip\ListTooltip.cs" />
+    <Compile Include="Core\UI\Tooltip\StringTooltip.cs" />
+    <Compile Include="Core\UI\Tooltip\Tooltip.cs" />
+    <Compile Include="Core\UI\Tooltip\UITooltip.cs" />
+    <Compile Include="Core\UI\Tooltip\UITooltipStringCallback.cs" />
     <Compile Include="Core\UI\UICurrencyText.cs" />
     <Compile Include="Core\UI\UIDisplayPlayerStat.cs" />
     <Compile Include="Core\UI\UIFormatText.cs" />
@@ -309,12 +326,14 @@
     <Compile Include="Core\UI\UIWalletDisplay.cs" />
     <Compile Include="Core\Utils\CheckType.cs" />
     <Compile Include="Core\Utils\DontDestroy.cs" />
-    <Compile Include="Core\Utils\Events\ActiveStatsCallbackEvent.cs" />
-    <Compile Include="Core\Utils\Events\FloatEvent.cs" />
-    <Compile Include="Core\Utils\Events\IntEvent.cs" />
     <Compile Include="Core\Utils\Events\StatEvent.cs" />
-    <Compile Include="Core\Utils\Events\BoolEvent.cs" />
-    <Compile Include="Core\Utils\Events\StringEvent.cs" />
+    <Compile Include="Core\Utils\Identifiers\SoundGroupIdentifier.cs" />
+    <Compile Include="Core\Utils\UnityEvents\ActiveStatsCallbackEvent.cs" />
+    <Compile Include="Core\Utils\UnityEvents\FloatEvent.cs" />
+    <Compile Include="Core\Utils\UnityEvents\IntEvent.cs" />
+    <Compile Include="Core\Utils\UnityEvents\StatEvent.cs" />
+    <Compile Include="Core\Utils\UnityEvents\BoolEvent.cs" />
+    <Compile Include="Core\Utils\UnityEvents\StringEvent.cs" />
     <Compile Include="Core\Utils\Extensions\CanvasGroupExtension.cs" />
     <Compile Include="Core\Utils\Extensions\RectTransformExtension.cs" />
     <Compile Include="Core\Utils\Extensions\ExecuteEventsExtension.cs" />

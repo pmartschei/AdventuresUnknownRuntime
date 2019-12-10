@@ -33,6 +33,8 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
 
         private Entity m_FrozenStats = null;
 
+        private ulong m_ID = 0;
+
         [SerializeField] private GameObject m_MuzzlePrefab = null;
         [SerializeField] private ModTypeIdentifier[] m_ResetModifiersOnActivate = new ModTypeIdentifier[0];
         [SerializeField] private Objects.Mods.Attribute[] m_AddAttributesOnActivate = new Objects.Mods.Attribute[0];
@@ -72,6 +74,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
         public bool AIRequiresTarget { get => m_AIRequiresTarget; set => m_AIRequiresTarget = value; }
         public GameObject MuzzlePrefab { get => m_MuzzlePrefab; set => m_MuzzlePrefab = value; }
         protected float StartVelocity { get; set; }
+        public ulong ID { get => m_ID; }
         #endregion
         #region Methods
         public virtual IEnumerator Activate(ActivationParameters activationParameters)
@@ -90,14 +93,14 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             foreach (Objects.Mods.Attribute attribute in m_AddAttributesOnActivate)
             {
                 if (!attribute.ConsistencyCheck()) continue;
-                stats.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(activationParameters.Level), attribute.ModBase.CalculationType, this));
+                stats.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.GetValue(activationParameters.Level), attribute.ModBase.CalculationType, this));
             }
-            foreach (Objects.Mods.Attribute attribute in activationParameters.ActiveGem.Attributes)
-            {
-                stats.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(activationParameters.Level), attribute.ModBase.CalculationType, this));
-            }
+            //foreach (Objects.Mods.Attribute attribute in activationParameters.ActiveGem.Attributes)
+            //{
+            //    stats.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(activationParameters.Level), attribute.ModBase.CalculationType, this));
+            //}
             AttackContext attackContext = new AttackContext(activationParameters.ActiveGem);
-            stats.Notify(ActionTypeManager.AttackApply, attackContext);
+            //stats.Notify(ActionTypeManager.AttackApply, attackContext);
             stats.Notify(ActionTypeManager.AttackGeneration, attackContext);
         }
         protected GenericAttack SpawnSingleInstance(ActivationParameters activationParameters, Vector3 origin, Vector3 destination, Muzzle muzzle = null)
@@ -135,9 +138,9 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
                     startVelocity = activationParameters.EntityController.Entity.GetStat("core.modtypes.ship.movementspeed").Current;
                     if (muzzle && m_MuzzlePrefab)
                     {
-                        //GameObject muzzleEffect = Instantiate(m_MuzzlePrefab, muzzle.MuzzleTransform.position,
-                        //   muzzle.MuzzleTransform.rotation, muzzle.MuzzleTransform);
-                        //muzzleEffect.transform.localScale = muzzle.MuzzleTransform.localScale;
+                        GameObject muzzleEffect = Instantiate(m_MuzzlePrefab, muzzle.MuzzleTransform.position,
+                           muzzle.MuzzleTransform.rotation, muzzle.MuzzleTransform);
+                        muzzleEffect.transform.localScale = muzzle.MuzzleTransform.localScale;
                     }
                 }
             }
@@ -150,6 +153,11 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
                 }
             }
 
+            instance.m_ID = activationParameters.ID;
+            if (instance.m_ID == 0)
+            {
+                instance.m_ID = IDManager.GetUniqueID();
+            }
             instance.m_SecondaryActiveGems = activationParameters.SecondaryActiveGems;
             instance.IsDestroyed = false;
             instance.m_HitTimer.Clear();
@@ -170,6 +178,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
 
         private void Awake()
         {
+            Animator = GetComponent<Animator>();
             Rigidbody = GetComponent<Rigidbody>();
             PoolDescription = GetComponent<PoolDescription>();
         }
@@ -179,14 +188,13 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             if (IsDestroyed) return;
             for (int i = 0; i < m_HitTimer.Count; i++)
             {
-                m_HitTimer[i].Update(Time.fixedDeltaTime);
+                m_HitTimer[i].Update(Time.deltaTime);
                 if (m_HitTimer[i].IsFinished())
                 {
                     m_HitTimer.RemoveAt(i);
                     i--;
                 }
             }
-            if (!CheckDuration()) return;
             AttackUpdate();
         }
 
@@ -194,6 +202,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
         {
             if (IsDestroyed) return;
             AttackFixedUpdate();
+            if (!CheckDuration()) return;
         }
         protected virtual void AttackUpdate()
         {
@@ -252,7 +261,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             yield return null;
         }
 
-        protected virtual void ActivateSecondaryActiveGem(int index)
+        protected virtual void ActivateSecondaryActiveGem(int index, ulong ID = 0)
         {
             if (m_SecondaryActiveGems == null) return;
             if (m_SecondaryActiveGems.Length <= index) return;
@@ -260,8 +269,13 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             if (activeGem == null) return;
             Entity entity = new Entity();
             entity.CopyFrom(m_FrozenStats);
-            entity.Notify(ActionTypeManager.AttackGeneration, new AttackContext(activeGem));
-            activeGem.Activate(this, entity, m_Level);
+
+            foreach (Objects.Mods.Attribute attribute in activeGem.Attributes)
+            {
+                entity.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.GetValue(m_Level), attribute.ModBase.CalculationType, activeGem));
+            }
+            //entity.Notify(ActionTypeManager.AttackGeneration, new AttackContext(activeGem));
+            activeGem.Activate(this, entity, m_Level,ID);
         }
 
         private bool HasCoroutines()
@@ -288,8 +302,18 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             }
             else
             {
-                m_HitTimer.Add(new TimerObject(hitContext.Target.Entity, hitContext.OffensiveEntity.GetStat("core.modtypes.skills.hittimer").Calculated));
-                hitContext.NotifyOffensiveEntity(ActionTypeManager.HitApply);
+                float hitTime = hitContext.OffensiveEntity.GetStat("core.modtypes.skills.hittimer").Calculated;
+                float IDTime = 10.0f;
+                m_HitTimer.Add(new TimerObject(hitContext.Target.Entity, hitTime));
+                TimerObject timer = hitContext.Target.Entity.GetTimer(m_ID);
+                if(timer != null)
+                {
+                }
+                else
+                {
+                    hitContext.Target.Entity.AddTimer(new TimerObject(m_ID, IDTime));
+                    hitContext.NotifyOffensiveEntity(ActionTypeManager.HitApply);
+                }
             }
         }
         protected virtual void OnBlock(HitContext hitContext)

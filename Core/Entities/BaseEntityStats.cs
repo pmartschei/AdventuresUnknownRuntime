@@ -32,7 +32,7 @@ namespace AdventuresUnknownSDK.Core.Entities
 
         private class InternalBaseAction : BaseAction
         {
-            public override ActionType ActionType => ActionTypeManager.Calculation;
+            public override ActionType ActionType => ActionTypeManager.Immediate;
 
             private Action m_Action = null;
             public InternalBaseAction(Action action)
@@ -54,10 +54,17 @@ namespace AdventuresUnknownSDK.Core.Entities
             if (m_Entity)
             {
                 Register(m_Entity.Entity);
-                m_Entity.Entity.NotifyOnStatChange(m_Entity.Entity.GetStat("core.modtypes.utility.level"), new InternalBaseAction(ChangeModifiersAll));
+                m_Entity.Entity.GetStat("core.modtypes.utility.level").OnCalculatedChange += OnLevelChange;
+                //m_Entity.Entity.NotifyOnStatChange(m_Entity.Entity.GetStat("core.modtypes.utility.level"), new InternalBaseAction(ChangeModifiersAll));
             }
             OnValidate();
         }
+
+        private void OnLevelChange(Stat stat)
+        {
+            ChangeModifiersAll();
+        }
+
         private void OnValidate()
         {
             m_ConsistentAttributes.Clear();
@@ -87,7 +94,7 @@ namespace AdventuresUnknownSDK.Core.Entities
 
             foreach(Attribute attribute in m_ConsistentAttributes)
             {
-                attribute.ModBase.AddStatModifierTo(entity,attribute.Value(entity.GetStat("core.modtypes.utility.level").Calculated),this);
+                attribute.ModBase.AddStatModifierTo(entity,attribute.GetValue(entity.GetStat("core.modtypes.utility.level").Calculated),this);
             }
         }
 

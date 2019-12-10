@@ -11,7 +11,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CalculationActions
     {
 
         #region Properties
-        public override ActionType ActionType { get => ActionTypeManager.Calculation; }
+        public override ActionType ActionType { get => ActionTypeManager.Immediate; }
         #endregion
 
         #region Methods

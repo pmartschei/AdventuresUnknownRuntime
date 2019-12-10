@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using UnityEngine.Events;
 
-namespace AdventuresUnknownSDK.Core.Utils.Events
+namespace AdventuresUnknownSDK.Core.Utils.UnityEvents
 {
     [Serializable]
-    public class StringEvent : UnityEvent<string>
+    public class BoolEvent : UnityEvent<bool>
     {
 
         #region Properties

@@ -8,8 +8,8 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.ActionObjects
 {
     public class ActionContext
     {
+        
         #region Properties
-
         #endregion
 
         #region Methods

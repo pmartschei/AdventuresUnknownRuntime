@@ -1,7 +1,7 @@
 ﻿using AdventuresUnknownRuntime.Core.Utils.Identifiers;
 using AdventuresUnknownSDK.Core.Entities;
 using AdventuresUnknownSDK.Core.Objects;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using System;
 using System.Collections;
 using System.Collections.Generic;

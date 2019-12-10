@@ -31,14 +31,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.UtilityActions
                 action.Root = this;
             }
         }
-        public override void Initialize(Entity activeStats)
-        {
-            foreach(BaseAction action in m_Actions)
-            {
-                if (!action) continue;
-                action.Initialize(activeStats);
-            }
-        }
 
         public override void Notify(Entity activeStats, ActionContext actionContext)
         {

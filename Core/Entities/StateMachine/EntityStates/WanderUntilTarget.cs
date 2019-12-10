@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AdventuresUnknownSDK.Core.Managers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine.EntityStates
         public override void Update()
         {
             base.Update();
-            if (CommonComponents.EntityController.Target && m_NextState)
+            if (CooldownManager.GetCooldown(CommonComponents.EntityController) == 0.0f && CommonComponents.EntityController.Target && m_NextState)
             {
                 if (CommonComponents.TranslationalController != null)
                     CommonComponents.TranslationalController.StopMove();

@@ -35,6 +35,12 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
             EntityStats = m_EnemyController.SpaceShip;
             m_Enemy = GetComponent<EnemyModel>().EntityBehaviour.Entity.Description.Enemy;
             m_ItemStacks = new List<ItemStack>();
+            OnLevelChange(null);
+            m_EnemyController.Entity.GetStat("core.modtypes.utility.level").OnCalculatedChange += OnLevelChange;
+        }
+
+        private void OnLevelChange(Stat stat)
+        {
             if (m_Enemy.ActiveGemCollection)
             {
                 List<ActiveGem> activeGems = m_Enemy.ActiveGemCollection.ActiveGems;
@@ -50,6 +56,11 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
                     itemStack.Register(ActiveStats[i]);
                     EntityStats.Entity.Register(ActiveStats[i]);
                     m_ItemStacks.Add(itemStack);
+                    foreach (Objects.Mods.Attribute attribute in (itemStack.Item as ActiveGem).Attributes)
+                    {
+                        ActiveStats[i].GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.GetValue(itemStack.PowerLevel + m_EnemyController.Entity.GetStat("core.modtypes.utility.level").Calculated / 5), attribute.ModBase.CalculationType, itemStack.Item));
+                    }
+                    ActiveStats[i].Notify(ActionTypeManager.AttackApply, new AttackContext(itemStack.Item as ActiveGem));
                 }
             }
         }
@@ -80,7 +91,7 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
         }
         public bool HasCooldown(EntityController entityController, int index)
         {
-            return (CooldownManager.HasCooldown(entityController));
+            return (CooldownManager.HasCooldown(entityController) || CooldownManager.HasCooldown(m_ItemStacks[index]));
         }
         public float GetAttackPriority(int index,EntityController controller,EntityController target)
         {
@@ -90,34 +101,23 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
         public float GetAttackMaxDistance(int index)
         {
             ActiveGem activeGem = m_ItemStacks[index].Item as ActiveGem;
-            Entity entity = new Entity();
-            entity.CopyFrom(CalculateEntity(index));
-            foreach (Objects.Mods.Attribute attribute in activeGem.Attributes)
-            {
-                entity.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(m_ItemStacks[index].PowerLevel), attribute.ModBase.CalculationType, this));
-            }
-            return activeGem.GetMaxSkillDistance(entity);
+            return activeGem.GetMaxSkillDistance(CalculateEntity(index));
         }
         public override void Spawn(EntityController origin, int index,params Muzzle[] muzzles)
         {
             ItemStack itemStack = m_ItemStacks[index];
             ActiveGem activeGem = itemStack.Item as ActiveGem;
             if (!activeGem) return;
-            if (CooldownManager.HasCooldown(origin)) return;
+            if (HasCooldown(origin,index)) return;
             Entity entity = new Entity();
             entity.CopyFrom(CalculateEntity(index));
-            entity.Notify(ActionTypeManager.AttackApply, new AttackContext(activeGem));
-            foreach (Objects.Mods.Attribute attribute in activeGem.Attributes)
-            {
-                entity.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(itemStack.PowerLevel), attribute.ModBase.CalculationType, this));
-            }
-            CooldownManager.AddCooldown(origin, entity.GetStat("core.modtypes.skills.cooldown").Calculated);
-            entity.EntityBehaviour = origin.SpaceShip;
-            Entity statsWithout = new Entity();
-            statsWithout.CopyFrom(EntityStats.Entity);
-            statsWithout.EntityBehaviour = origin.SpaceShip;
+            CooldownManager.AddCooldown(itemStack, entity.GetStat("core.modtypes.skills.cooldown").Calculated);
+            CooldownManager.AddCooldown(origin, entity.GetStat("core.modtypes.skills.casttime").Calculated);
+            //Entity statsWithout = new Entity();
+            //statsWithout.CopyFrom(EntityStats.Entity);
+            //statsWithout.EntityBehaviour = origin.SpaceShip;
             //CooldownManager.AddCooldown(m_EnemyController.SpaceShip.Entity,1.0f);
-            activeGem.Activate(origin, statsWithout, itemStack.PowerLevel + origin.SpaceShip.Entity.GetStat("core.modtypes.utility.level").Calculated / 5.0f, muzzles);
+            activeGem.Activate(origin, CalculateEntity(index), itemStack.PowerLevel + origin.SpaceShip.Entity.GetStat("core.modtypes.utility.level").Calculated / 5,0, muzzles);
         }
         #endregion
     }

@@ -91,7 +91,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             {
                 sb.Append("<color=#" + htmlColor + ">");
                 sb.AppendFormat("{0:" + format.Main + (format.Main.LocalizedString.Contains(";") ? "" : ";" + format.Main) + "}", value);
-                sb.Append("</color>");
             }
             else
             {
@@ -102,7 +101,6 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             sb.Append(postString+(!postString.Equals(string.Empty) ? " " : ""));
             if (m_ColorsEnabled)
             {
-                sb.Append("<color=#" + htmlColor + ">");
                 sb.Append(Description);
                 sb.Append("</color>");
             }

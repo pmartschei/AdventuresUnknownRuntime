@@ -18,24 +18,13 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.CalculationActions
         [SerializeField] private ModTypeIdentifier m_DestinationMod;
         
         #region Methods
-        public override void Initialize(Entity activeStats)
-        {
-            Stat destination = activeStats.GetStat(m_DestinationMod.Identifier);
-            Stat origin = activeStats.GetStat(m_OriginMod.Identifier);
-            destination.AddStatModifier(new StatModifier(0.0f, CalculationType.FlatExtra, this.Root));
-            activeStats.NotifyOnStatChange(origin, this);
-        }
-
         public override void Notify(Entity activeStats,ActionContext context)
         {
             Stat destination = activeStats.GetStat(m_DestinationMod.Identifier);
             Stat origin = activeStats.GetStat(m_OriginMod.Identifier);
-            Stat value = activeStats.GetStat(ModType.Identifier);
-            StatModifier[] statModifiers = destination.GetStatModifiersBySource(this);
-            if (statModifiers.Length >= 1)
-            {
-                statModifiers[0].Value = origin.Calculated * value.Calculated;
-            }
+            Stat stat = activeStats.GetStat(ModType.Identifier);
+
+            destination.AddStatModifier(new StatModifierByStat(stat, CalculationType.Flat, this, CalculationType.Calculated, (value) => { return value * origin.Calculated; }));
         }
         #endregion
     }

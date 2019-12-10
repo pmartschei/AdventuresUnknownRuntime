@@ -25,15 +25,12 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions.UtilityActions
         {
             base.Initialize(modType);
             if (m_FollowAction)
-            m_FollowAction.Initialize(modType);
-            m_FollowAction.Root = this;
-        }
-        public override void Initialize(Entity activeStats)
-        {
+            {
+                m_FollowAction.Initialize(modType);
+                m_FollowAction.Root = this;
+            }
             if (m_ConditionAction)
-                m_ConditionAction.Initialize(activeStats,ModType);
-            if (m_FollowAction)
-                m_FollowAction.Initialize(activeStats);
+            m_ConditionAction.Initialize(modType);
         }
 
         public override void Notify(Entity activeStats, ActionContext actionContext)

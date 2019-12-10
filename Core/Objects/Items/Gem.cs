@@ -72,7 +72,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Items
             foreach (Attribute attribute in m_ConsistentSupportAttributes)
             {
                 ValueMod valueMod = new ValueMod();
-                valueMod.Value = attribute.Value(itemStack.PowerLevel);
+                valueMod.Value = attribute.GetValue(itemStack.PowerLevel);
                 valueMod.Identifier = attribute.ModBaseIdentifier;
                 valueMods.Add(valueMod);
             }

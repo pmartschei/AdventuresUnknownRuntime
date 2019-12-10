@@ -16,7 +16,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods.Actions
         #endregion
 
         #region Methods
-        public virtual void Initialize(Entity activeStats,ModType modType)
+        public virtual void Initialize(ModType modType)
         {
             this.ModType = modType;
         }

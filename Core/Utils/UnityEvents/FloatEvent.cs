@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using UnityEngine.Events;
 
-namespace AdventuresUnknownSDK.Core.Utils.Events
+namespace AdventuresUnknownSDK.Core.Utils.UnityEvents
 {
     [Serializable]
-    public class IntEvent : UnityEvent<int>
+    public class FloatEvent : UnityEvent<float>
     {
 
         #region Properties

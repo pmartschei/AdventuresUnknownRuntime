@@ -7,6 +7,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
 {
     public enum CalculationType
     {
+        Percentage = -2,
         Calculated = -1,
         Flat = 0,
         Increased = 1,

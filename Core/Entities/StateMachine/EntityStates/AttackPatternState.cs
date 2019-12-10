@@ -72,7 +72,7 @@ namespace AdventuresUnknownSDK.Core.Entities.StateMachine.EntityStates
         public override void FixedUpdate()
         {
             base.FixedUpdate();
-            if (!CheckDistance()) return;
+            if (!CheckDistance()) ;
             if (m_CurrentState < m_InstancedEntityStates.Length)
             {
                 if (m_InstancedEntityStates[m_CurrentState] != null)

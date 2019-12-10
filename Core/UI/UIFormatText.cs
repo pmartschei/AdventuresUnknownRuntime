@@ -1,5 +1,5 @@
 ﻿using AdventuresUnknownSDK.Core.UI.Interfaces;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using System;
 using System.Collections.Generic;
 using System.Linq;

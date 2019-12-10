@@ -1,6 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Attributes;
 using AdventuresUnknownSDK.Core.Entities;
 using AdventuresUnknownSDK.Core.Entities.Controllers;
+using AdventuresUnknownSDK.Core.Utils.Extensions;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System.Collections;
 using System.Collections.Generic;
@@ -63,12 +64,20 @@ public class UIHealthBar : MonoBehaviour
             m_Slider.maxValue = stat.Calculated;
             m_Slider.minValue = 0.0f;
             m_Slider.value = stat.Current;
+            if (stat.Current >= stat.Calculated || stat.Current <= 0)
+            {
+                m_CanvasGroup.Hide();
+            }
+            else
+            {
+                m_CanvasGroup.Show();
+            }
         }
     }
 
     public void SetWidthRelativeInGame(float width)
     {
-        m_RectTransform.sizeDelta = new Vector2(width * InvertedScale.x,m_RectTransform.sizeDelta.y);
+        m_RectTransform.sizeDelta = new Vector2(width * InvertedScale.x / this.transform.localScale.x,m_RectTransform.sizeDelta.y);
     }
     #endregion
 }

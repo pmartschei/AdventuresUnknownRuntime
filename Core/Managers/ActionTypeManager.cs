@@ -13,7 +13,7 @@ namespace AdventuresUnknownSDK.Core.Managers
 
         #region Properties
 
-        public static ActionType Calculation                { get => Instance.CalculationImpl; set => Instance.CalculationImpl = value; }
+        public static ActionType Immediate                { get => Instance.ImmediateImpl; set => Instance.ImmediateImpl = value; }
         public static ActionType Tick                       { get => Instance.TickImpl; set => Instance.TickImpl = value; }
         public static ActionType Death                      { get => Instance.DeathImpl; set => Instance.DeathImpl = value; }
         public static ActionType PostDeath                  { get => Instance.PostDeathImpl; set => Instance.PostDeathImpl = value; }
@@ -27,8 +27,9 @@ namespace AdventuresUnknownSDK.Core.Managers
         public static ActionType AttackCooldownApply        { get => Instance.AttackCooldownApplyImpl; set => Instance.AttackCooldownApplyImpl = value; }
         public static ActionType AttackApply                { get => Instance.AttackApplyImpl; set => Instance.AttackApplyImpl = value; }
         public static ActionType AttackGeneration           { get => Instance.AttackGenerationImpl; set => Instance.AttackGenerationImpl = value; }
+        public static ActionType AuraApply                  { get => Instance.AuraApplyImpl; set => Instance.AuraApplyImpl = value; }
 
-        protected abstract ActionType CalculationImpl { get; set; }
+        protected abstract ActionType ImmediateImpl { get; set; }
         protected abstract ActionType TickImpl { get; set; }
         protected abstract ActionType DeathImpl { get; set; }
         protected abstract ActionType PostDeathImpl { get; set; }
@@ -42,6 +43,7 @@ namespace AdventuresUnknownSDK.Core.Managers
         protected abstract ActionType AttackCooldownApplyImpl { get; set; }
         protected abstract ActionType AttackApplyImpl { get; set; }
         protected abstract ActionType AttackGenerationImpl { get; set; }
+        protected abstract ActionType AuraApplyImpl { get; set; }
         #endregion
 
         #region Methods

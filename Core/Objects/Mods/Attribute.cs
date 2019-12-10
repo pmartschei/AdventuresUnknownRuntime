@@ -22,6 +22,9 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
         #region Properties
         public string ModBaseIdentifier { get => m_ModBaseIdentifier.Identifier;}
         public BasicModBase ModBase { get => m_ModBaseIdentifier.Object; }
+        public AnimationCurve ValueCurve { get => m_ValueCurve;}
+        public bool IsCurve { get => m_IsCurve; set => m_IsCurve = value; }
+        public float Value { get => m_Value; set => m_Value = value; }
         #endregion
 
         #region Methods
@@ -31,7 +34,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             return m_ModBaseIdentifier.ConsistencyCheck();
         }
 
-        public virtual float Value(float time)
+        public virtual float GetValue(float time)
         {
             if (m_IsCurve)
             {
@@ -54,6 +57,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
             Attribute copy = new Attribute();
             copy.m_ModBaseIdentifier.Identifier = this.ModBaseIdentifier;
             copy.m_Value = this.m_Value;
+            copy.IsCurve = this.IsCurve;
             Keyframe[] keyFrames = new Keyframe[m_ValueCurve.length];
             Keyframe[] originFrames = m_ValueCurve.keys;
             for(int i=0;i < keyFrames.Length;i++)

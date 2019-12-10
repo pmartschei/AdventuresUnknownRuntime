@@ -9,6 +9,10 @@ namespace AdventuresUnknownSDK.Core.Entities
         private object m_Source = null;
         private bool m_IsDirty = false;
 
+        public delegate void VoidEvent();
+
+        private VoidEvent m_IsDirtyEvent;
+
         public StatModifier(float value, CalculationType calculationType,object source)
         {
             this.m_Value = value;
@@ -16,7 +20,7 @@ namespace AdventuresUnknownSDK.Core.Entities
             this.m_Source = source;
         }
 
-        public CalculationType CalculationType {
+        public virtual CalculationType CalculationType {
             get => m_CalculationType;
             set
             {
@@ -24,10 +28,11 @@ namespace AdventuresUnknownSDK.Core.Entities
                 {
                     m_CalculationType = value;
                     m_IsDirty = true;
+                    m_IsDirtyEvent?.Invoke();
                 }
             }
         }
-        public float Value {
+        public virtual float Value {
             get => m_Value;
             set
             {
@@ -35,10 +40,12 @@ namespace AdventuresUnknownSDK.Core.Entities
                 {
                     m_Value = value;
                     m_IsDirty = true;
+                    m_IsDirtyEvent?.Invoke();
                 }
             }
         }
-        public bool IsDirty { get => m_IsDirty; set => m_IsDirty = value; }
-        public object Source { get => m_Source; set => m_Source = value; }
+        public virtual bool IsDirty { get => m_IsDirty; set => m_IsDirty = value; }
+        public virtual object Source { get => m_Source; set => m_Source = value; }
+        public event VoidEvent OnIsDirty { add => m_IsDirtyEvent +=value; remove => m_IsDirtyEvent -= value; }
     }
 }

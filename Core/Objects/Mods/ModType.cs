@@ -84,6 +84,12 @@ namespace AdventuresUnknownSDK.Core.Objects.Mods
                 foundFormatter = ModTypeFormatter.DefaultFormatter; //take the default formatter
             return foundFormatter;
         }
+
+        public override void ForceUpdate()
+        {
+            base.ForceUpdate();
+            HTMLColor = ColorUtility.ToHtmlStringRGBA(m_Color);
+        }
         public virtual void OnValidate()
         {
             HTMLColor = ColorUtility.ToHtmlStringRGBA(m_Color);

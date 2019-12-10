@@ -20,6 +20,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
         public ActiveGem[] SecondaryActiveGems { get; set; }
         public float Level { get; set; }
         public Muzzle[] Muzzles { get; set; }
+        public ulong ID { get; set; }
         #endregion
 
         #region Methods
@@ -32,6 +33,7 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             SecondaryActiveGems = null;
             Level = 0.0f;
             Muzzles = null;
+            ID = 0;
         }
         #endregion
     }

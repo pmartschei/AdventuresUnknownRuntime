@@ -20,6 +20,8 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
     {
         [SerializeField] private InventoryIdentifier m_Inventory = null;
 
+        private List<Entity> m_ActiveStatsApply = new List<Entity>();
+
         private List<string[]> m_DisplayMods = new List<string[]>();
 
         #region Properties
@@ -49,84 +51,118 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
         {
             UpdateListSizes(ActiveStats, m_Inventory.Object.Size);
             UpdateListSizes(m_DisplayMods, m_Inventory.Object.Size);
+            UpdateListSizes(m_ActiveStatsApply, m_Inventory.Object.Size);
+            UpdateSlot(slot);
+        }
+
+        private void UpdateSlot(int slot)
+        {
             if (ActiveStats[slot] == null)
             {
                 ActiveStats[slot] = new Entity();
+                m_ActiveStatsApply[slot] = new Entity();
+                ActiveStats[slot].EntityBehaviour = EntityStats;
+                m_ActiveStatsApply[slot].EntityBehaviour = EntityStats;
                 //hacky stuff
                 EntityStats.Entity.Register(ActiveStats[slot]);
+                EntityStats.Entity.Register(m_ActiveStatsApply[slot]);
                 if (slot == 0)
                 {
                     for (int i = 1; i < m_Inventory.Object.Size; i++)
+                    {
                         m_Inventory.Object.Register(ActiveStats[slot], i);
+                        m_Inventory.Object.Register(m_ActiveStatsApply[slot], i);
+                    }
                 }
                 else
                 {
                     m_Inventory.Object.Register(ActiveStats[slot], 0);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 0);
                 }
                 if (slot == 1)
                 {
                     m_Inventory.Object.Register(ActiveStats[slot], 2);
                     m_Inventory.Object.Register(ActiveStats[slot], 5);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 2);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 5);
                 }
                 else if (slot == 2)
                 {
                     m_Inventory.Object.Register(ActiveStats[slot], 1);
                     m_Inventory.Object.Register(ActiveStats[slot], 3);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 1);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 3);
                 }
                 else if (slot == 3)
                 {
                     m_Inventory.Object.Register(ActiveStats[slot], 2);
                     m_Inventory.Object.Register(ActiveStats[slot], 4);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 2);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 4);
                 }
                 else if (slot == 4)
                 {
                     m_Inventory.Object.Register(ActiveStats[slot], 3);
                     m_Inventory.Object.Register(ActiveStats[slot], 5);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 3);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 5);
                 }
                 else if (slot == 5)
                 {
                     m_Inventory.Object.Register(ActiveStats[slot], 1);
                     m_Inventory.Object.Register(ActiveStats[slot], 4);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 1);
+                    m_Inventory.Object.Register(m_ActiveStatsApply[slot], 4);
                 }
             }
-            ActiveGem activeGem = m_Inventory.Object.Items[slot].Item as ActiveGem;
-            if (activeGem != null)
+            for (int i = 0; i < m_Inventory.Object.Size; i++)
             {
-                List<string> displayList = new List<string>();
-                foreach(ModTypeIdentifier identifier in activeGem.DisplayMods)
+                ActiveGem activeGem = m_Inventory.Object.Items[i].Item as ActiveGem;
+                if (activeGem != null)
                 {
-                    displayList.Add(identifier.Identifier);
+                    if (ActiveStats[i] != null)
+                    {
+                        ActiveStats[i].RemoveAllModifiersBySource(activeGem);
+                        m_ActiveStatsApply[i].RemoveAllModifiersBySource(activeGem);
+                        foreach (Objects.Mods.Attribute attribute in (m_Inventory.Object.Items[i].Item as ActiveGem).Attributes)
+                        {
+                            ActiveStats[i].GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.GetValue(m_Inventory.Object.Items[i].PowerLevel), attribute.ModBase.CalculationType, activeGem));
+                            m_ActiveStatsApply[i].GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.GetValue(m_Inventory.Object.Items[i].PowerLevel), attribute.ModBase.CalculationType, activeGem));
+                        }
+                        List<string> displayList = new List<string>();
+                        foreach (ModTypeIdentifier identifier in activeGem.DisplayMods)
+                        {
+                            displayList.Add(identifier.Identifier);
+                        }
+                        m_DisplayMods[i] = displayList.Distinct().ToArray();
+                        m_ActiveStatsApply[i].Notify(ActionTypeManager.AttackApply, new AttackContext(activeGem));
+                    }
                 }
-                m_DisplayMods[slot] = displayList.Distinct().ToArray();
             }
         }
 
-        public Entity CalculateEntity(int index,bool notifyAttackApply)
+        public override Entity GetEntityWithApply(int index)
         {
-            Entity entity = CalculateEntity(index);
-            if (notifyAttackApply)
-            {
-                entity.Notify(ActionTypeManager.AttackApply, new AttackContext(m_Inventory.Object.Items[index].Item as ActiveGem));
-            }
-            return entity;
+            return m_ActiveStatsApply[index];
         }
         public override Entity CalculateEntity(int index)
         {
-            Entity entity = new Entity();
-            entity.CopyFrom(ActiveStats[index]);
-            ItemStack stack = m_Inventory.Object.Items[index];
-            foreach (Objects.Mods.Attribute attribute in (stack.Item as ActiveGem).Attributes)
-            {
-                entity.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(stack.PowerLevel), attribute.ModBase.CalculationType, this));
-            }
-            return entity;
+            return ActiveStats[index];
+            //Entity entity = new Entity();
+            //entity.CopyFrom(ActiveStats[index]);
+            //ItemStack stack = m_Inventory.Object.Items[index];
+            //foreach (Objects.Mods.Attribute attribute in (stack.Item as ActiveGem).Attributes)
+            //{
+            //    entity.GetStat(attribute.ModBase.ModTypeIdentifier).AddStatModifier(new StatModifier(attribute.Value(stack.PowerLevel), attribute.ModBase.CalculationType, this));
+            //}
+            //return entity;
         }
 
         public float GetCooldown(int index)
         {
             return CooldownManager.GetCooldown(m_Inventory.Object.Items[index]);
         }
-        public string[] CalculateDisplayMods(int index)
+        public override string[] CalculateDisplayMods(int index)
         {
             return m_DisplayMods[index];
         }
@@ -135,13 +171,16 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
             ItemStack stack = m_Inventory.Object.Items[index];
             if (stack.IsEmpty) return;
             if (CooldownManager.HasCooldown(stack)) return;
-            if (CooldownManager.HasCooldown(origin.SpaceShip.Entity)) return;
-            Entity statsWithout = new Entity();
-            statsWithout.CopyFrom(ActiveStats[index]);
+            Entity entityWithAppliedStats = GetEntityWithApply(index);
+            if (entityWithAppliedStats.GetStat("core.modtypes.skills.casttime").Calculated > 0 && CooldownManager.HasCooldown(origin.SpaceShip.Entity)) return;
+            //Entity statsWithout = new Entity();
+            //statsWithout.CopyFrom(ActiveStats[index]);
+            //Entity entity = new Entity();
+            //entity.CopyFrom(CalculateEntity(index,true));
+            //statsWithout.EntityBehaviour = origin.SpaceShip;
+            //entity.EntityBehaviour = origin.SpaceShip;
             Entity entity = new Entity();
-            entity.CopyFrom(CalculateEntity(index,true));
-            statsWithout.EntityBehaviour = origin.SpaceShip;
-            entity.EntityBehaviour = origin.SpaceShip;
+            entity.CopyFrom(entityWithAppliedStats);
             CooldownContext cooldownContext = new CooldownContext(EntityStats.Entity);
             entity.Notify(ActionTypeManager.AttackCooldownGeneration, cooldownContext);
             if (cooldownContext.CanUse)
@@ -150,7 +189,7 @@ namespace AdventuresUnknownSDK.Core.Logic.ActiveGemContainers
                 CooldownManager.AddCooldown(this.EntityStats.Entity, entity.GetStat("core.modtypes.skills.casttime").Calculated);
                 entity.Notify(ActionTypeManager.AttackCooldownApply, cooldownContext);
                 ActiveGem activeGem = stack.Item as ActiveGem;
-                activeGem.Activate(origin, statsWithout, stack.PowerLevel , muzzles);
+                activeGem.Activate(origin, entity, stack.PowerLevel , 0, muzzles);
             }
         }
         #endregion

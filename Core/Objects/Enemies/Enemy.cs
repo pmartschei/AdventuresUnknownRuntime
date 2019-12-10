@@ -22,6 +22,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
         [Range(1, 10)]
         [SerializeField] private int m_Difficulty = 1;
         [SerializeField] private EnemyModel m_Model = null;
+        [SerializeField] private SpawnObject m_SpawnObject = null;
         [SerializeField] private ActiveGemCollection m_ActiveGemCollection = null;
         
         //attack list for enemy
@@ -34,6 +35,7 @@ namespace AdventuresUnknownSDK.Core.Objects.Enemies
         public TagList TagList { get => m_TagList; set => m_TagList = value; }
         public int Difficulty { get => m_Difficulty; set => m_Difficulty = value; }
         public bool IsSpawnable { get => m_IsSpawnable; set => m_IsSpawnable = value; }
+        public SpawnObject SpawnObject { get => m_SpawnObject; set => m_SpawnObject = value; }
 
         #endregion
 

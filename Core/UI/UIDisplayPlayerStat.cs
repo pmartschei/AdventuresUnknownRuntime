@@ -1,7 +1,7 @@
 ﻿using AdventuresUnknownSDK.Core.Entities;
 using AdventuresUnknownSDK.Core.Entities.Controllers;
 using AdventuresUnknownSDK.Core.Managers;
-using AdventuresUnknownSDK.Core.Utils.Events;
+using AdventuresUnknownSDK.Core.Utils.UnityEvents;
 using AdventuresUnknownSDK.Core.Utils.Identifiers;
 using System;
 using System.Collections.Generic;
@@ -29,6 +29,10 @@ namespace AdventuresUnknownSDK.Core.UI
         {
             EntityBehaviour entityBehaviour = PlayerManager.SpaceShip;
             Stat stat = entityBehaviour.Entity.GetStat(m_ModType.Identifier);
+
+            m_OnStatChangeEvent.Invoke(stat);
+            return;
+
             if (m_LastStat == null || !m_LastStat.Equals(stat))
             {
                 m_LastStat = stat.Copy();

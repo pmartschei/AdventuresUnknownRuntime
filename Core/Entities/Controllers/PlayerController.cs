@@ -59,7 +59,6 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
                     ));
                 LookAt(LookingDestination);
             }
-            UpdateMovement();
             if (SpaceShip.Entity.IsDead)
             {
                 SpaceShip.gameObject.SetActive(false);
@@ -87,8 +86,9 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
 
         private void FixedUpdate()
         {
-            m_RigidBody.drag = SpaceShip.Entity.GetStat("core.modtypes.ship.movementresistance").Calculated;
+            //m_RigidBody.drag = SpaceShip.Entity.GetStat("core.modtypes.ship.movementresistance").Calculated;
             Stat speed = SpaceShip.Entity.GetStat("core.modtypes.ship.movementspeed");
+            UpdateMovement();
             if (m_RigidBody.velocity.magnitude > speed.Calculated)
             {
                 m_RigidBody.velocity = m_RigidBody.velocity.normalized * speed.Calculated;
@@ -100,19 +100,23 @@ namespace AdventuresUnknownSDK.Core.Entities.Controllers
             Stat acceleration = SpaceShip.Entity.GetStat("core.modtypes.ship.acceleration");
             if (Input.GetKey(KeyCode.W))
             {
-                m_RigidBody.AddForce(Vector3.forward * acceleration.Calculated);
+                Vector3 force = (Vector3.forward * acceleration.Calculated);
+                m_RigidBody.AddForce(force);
             }
             if (Input.GetKey(KeyCode.S))
             {
-                m_RigidBody.AddForce(-Vector3.forward * acceleration.Calculated);
+                Vector3 force = (-Vector3.forward * acceleration.Calculated);
+                m_RigidBody.AddForce(force, ForceMode.Acceleration);
             }
             if (Input.GetKey(KeyCode.D))
             {
-                m_RigidBody.AddForce(Vector3.right * acceleration.Calculated);
+                Vector3 force = (Vector3.right * acceleration.Calculated);
+                m_RigidBody.AddForce(force, ForceMode.Acceleration);
             }
             if (Input.GetKey(KeyCode.A))
             {
-                m_RigidBody.AddForce(-Vector3.right * acceleration.Calculated);
+                Vector3 force = (-Vector3.right * acceleration.Calculated);
+                m_RigidBody.AddForce(force, ForceMode.Acceleration);
             }
         }
 
